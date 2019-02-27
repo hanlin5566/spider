@@ -44,6 +44,7 @@ public class SpiderConsumerPushMQ implements Runnable {
 				JSONObject ret = new JSONObject();
 				String content = null;
 				int no = spider.getNo();
+				String id = spider.getId();
 				String url = spider.getUrl();
 				String name = spider.getName();
 				logger.info("name:{},NO:{},休眠{}",name,no,sleepTime);
@@ -65,9 +66,10 @@ public class SpiderConsumerPushMQ implements Runnable {
 				} catch (Exception e) {
 					logger.error("http URI:{} NO:{},请求发生错误",url,no,e);
 				}
-				logger.info("采集{},NO{}",spider.getUrl(),no);
+				logger.info("采集{},NO{},ID{}",spider.getUrl(),no,id);
 				ret.put("body", content);
 				ret.put("no", no);
+				ret.put("id", id);
 				ret.put("name", name);
 				ret.put("success", success);
 //				producerQueue.put(ret);
@@ -84,12 +86,15 @@ public class SpiderConsumerPushMQ implements Runnable {
 		private static final long serialVersionUID = 2097027720043257694L;
 		// 序号
 		private int no;
+		//标识
+		private String id;
 		// 序号
 		private String name;
 		// url
 		private String url;
 		// param
 		private String param;
+		
 		public int getNo() {
 			return no;
 		}
@@ -114,9 +119,16 @@ public class SpiderConsumerPushMQ implements Runnable {
 		public void setParam(String param) {
 			this.param = param;
 		}
-		public Spider(int no, String name, String url, String param) {
+		public String getId() {
+			return id;
+		}
+		public void setId(String id) {
+			this.id = id;
+		}
+		public Spider(int no, String id, String name, String url, String param) {
 			super();
 			this.no = no;
+			this.id = id;
 			this.name = name;
 			this.url = url;
 			this.param = param;

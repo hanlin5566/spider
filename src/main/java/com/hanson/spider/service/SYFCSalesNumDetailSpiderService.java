@@ -1,12 +1,17 @@
 package com.hanson.spider.service;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,10 +83,10 @@ public class SYFCSalesNumDetailSpiderService {
 		for (int i = 0; i < unfinishedList.size(); i++) {
 			JSONObject jsonObject = unfinishedList.get(i);
 			String deltailUri = jsonObject.getString("deltail_uri");
-			int no = jsonObject.getInteger("no");
+			String third_record_id = jsonObject.getString("third_record_id");
 			try {
 				//http://www.syfc.com.cn/work/ysxk/ysxkzinfo.jsp?id=23265185
-				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(no, "syfc_sales_num_detail" + no, url+ deltailUri,null);
+				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(i,third_record_id, "syfc_sales_num_detail" + third_record_id, url+ deltailUri,null);
 				consumerQueue.put(spider);
 			} catch (InterruptedException e) {
 				throw new ServiceException(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR,String.format(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR.detailMsg(), e.getMessage()), e);
@@ -153,20 +158,20 @@ public class SYFCSalesNumDetailSpiderService {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
 		String folderName = "syfc_sales_num_detail" + date_str;
-		int no;
 		String body = ret.getString("body");
 		Boolean success = ret.getBoolean("success");
-		no = ret.getInteger("no");
+		String id = ret.getString("id");//third_record_id
+		int no = ret.getInteger("no");
 		if(!success) {
 			logger.error("持久化mongo发生错误 NO:{},请求发生请求页面失败错误",no);
 		}
 		logger.info("syfc_sales_num_detail 采集成功，NO:{},正在入库。",no);
 		// 保存文件
-		fileUtils.saveFile(folderName, "syfc_salesNoDetail_"+no+"_"+sdf_iso.format(new Date()), body);
-		// 解析页面
-		JSONObject parseSalesNoDetail = parser.parseSalesNoDetail(body);
+		fileUtils.saveFile(folderName, "syfc_salesNoDetail_"+id+"_"+sdf_iso.format(new Date()), body);
 		// 持久化解析结果到mongo
 		try {
+			// 解析页面
+			JSONObject parseSalesNoDetail = parser.parseSalesNoDetail(body);
 			Query salesNumDetailQuery = new Query();
 			salesNumDetailQuery.addCriteria(Criteria.where("third_record_id").is(parseSalesNoDetail.get("third_record_id")));
 			JSONObject salesNumRecord = mongoTemplate.findOne(salesNumDetailQuery, JSONObject.class, salesNumberRecordCollectionName);
@@ -205,4 +210,49 @@ public class SYFCSalesNumDetailSpiderService {
 			throw e;
 		}
 	}
+	
+	public void recoverSalesNumDetail(String folderPath) {
+		int i = 0;
+		try {
+			File folder = new File(folderPath);
+			//UUID
+			if(folder.isDirectory()) {
+				File[] listFiles = folder.listFiles();
+				for (; i < listFiles.length; i++) {
+					FileInputStream fis = new FileInputStream(listFiles[i]);
+					String fileName = listFiles[i].getName();
+					String content = IOUtils.toString(fis);
+					JSONObject ret = new JSONObject();
+					ret.put("body", content);
+					ret.put("no", fileName.split("_")[2]);
+					ret.put("success", true);
+					this.saveResult(ret);
+				}
+				
+			}
+		} catch (Exception e) {
+			logger.error("恢复数据发生错误 NO:{},请求发生错误",i,e);
+		}
+	}
+	
+	//去重复
+	public void distinctSalesNumDetail() {
+		List<JSONObject> detailList = mongoTemplate.findAll(JSONObject.class, salesNumberRecordCollectionName);
+		Map<String,JSONObject> detailMap = new HashMap<String,JSONObject>();
+		for (JSONObject jsonObject : detailList) {
+			String third_record_id = jsonObject.getString("third_record_id");
+			if(detailMap.containsKey(third_record_id)) {
+				JSONObject temp = detailMap.get(third_record_id);
+				//字段数量大于缓存，已经采集完数据则删除缓存的key，字段数量小于缓存，则应该删除当前的key
+				Object key = jsonObject.size() >= temp.size() ? temp.get("_id") : jsonObject.get("_id");
+				Query query = new Query();
+				query.addCriteria(Criteria.where("_id").is(key));
+				mongoTemplate.remove(query, salesNumberRecordCollectionName);
+				logger.error("正在删除,重复数据 third_record_id:{}",third_record_id);
+			}else {
+				detailMap.put(third_record_id, jsonObject);
+			}
+		}
+	}
+	
 }

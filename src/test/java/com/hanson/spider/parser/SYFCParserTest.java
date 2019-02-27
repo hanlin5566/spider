@@ -132,10 +132,10 @@ public class SYFCParserTest {
 					String company = td.get(3).text();//开发商
 					String start_sales_date = td.get(4).text();//开盘日期
 					String subordinate_district = td.get(5).text();//所属区
-					String third_pard_id = deltail_uri.substring(deltail_uri.indexOf("=")+1, deltail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+					String third_record_id = deltail_uri.substring(deltail_uri.indexOf("=")+1, deltail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
 					JSONObject json = new JSONObject();
 					json.put("deltail_uri", deltail_uri);
-					json.put("third_pard_id", third_pard_id);
+					json.put("third_record_id", third_record_id);
 					json.put("program_describe", program_describe);
 					json.put("district", district);
 					json.put("build_count", build_count);
@@ -180,7 +180,7 @@ public class SYFCParserTest {
 					String sales_no = td.get(4).text();//预售许可证
 					String sales_price_deltail_uri = td.get(5).getElementsByTag("a").attr("href");//详情页连接
 					String sales_price_program_localtion_detail = td.get(5).getElementsByTag("a").text();//销售金额-项目地址-详情
-					String sales_price_third_pard_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+1, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
+					String sales_price_third_record_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+1, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
 					JSONObject json = new JSONObject();
 					json.put("sales_price_sub_no", sales_price_sub_no);
 					json.put("sales_price_approve_date", sales_price_approve_date);
@@ -189,7 +189,7 @@ public class SYFCParserTest {
 					json.put("sales_no", sales_no);
 					json.put("sales_price_deltail_uri", sales_price_deltail_uri);
 					json.put("sales_price_program_localtion_detail", sales_price_program_localtion_detail);
-					json.put("sales_price_third_pard_id", sales_price_third_pard_id);
+					json.put("sales_price_third_record_id", sales_price_third_record_id);
 					System.out.println(json.toJSONString());
 				}
 			}

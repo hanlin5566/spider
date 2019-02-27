@@ -31,7 +31,7 @@ import com.hzcf.base.exception.ServiceException;
  * 新建楼盘栋列表采集
  */
 @Service
-public class SYFCNewBuildDetailSpiderService {
+public class SYFCNewBuildHouseSpiderService {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
 	@Value("${syfc.home.url:http://www.syfc.com.cn/}")
 	private String url;
@@ -55,8 +55,8 @@ public class SYFCNewBuildDetailSpiderService {
 	//mongo 插入日期格式
 	private final String MONGO_ISO = "yyyy-MM-dd HH:mm:ss";
 	//mongo collection name
-	private final String recordCollectionName = "syfc_new_build_detail";
-	private final String listCollectionName = "syfc_new_build_list";
+	private final String recordCollectionName = "syfc_new_build_house";
+	private final String listCollectionName = "syfc_new_build_detail";
 
 	
 	private final SimpleDateFormat sdf_date = new SimpleDateFormat(this.FORMAT_DATE);
@@ -67,7 +67,7 @@ public class SYFCNewBuildDetailSpiderService {
 	 * 队列方式全新采集
 	 * @param taskId
 	 */
-	public void collectNewBuildDetail() {
+	public void collectNewHouseDetail() {
 		BlockingQueue<SpiderConsumerPushMQ.Spider> consumerQueue = new LinkedBlockingQueue<SpiderConsumerPushMQ.Spider>();
 		List<JSONObject> unfinishedList = this.readUnFinishedTask();
 		for (int i = 0; i < unfinishedList.size(); i++) {
@@ -75,7 +75,7 @@ public class SYFCNewBuildDetailSpiderService {
 			String deltailUri = jsonObject.getString("deltail_uri");
 			String third_record_id = jsonObject.getString("third_record_id");
 			try {
-				//http://www.syfc.com.cn/work/xjlp/build_list.jsp?xmmcid=64583&xmmc=居住、商业（一期）
+				//http://www.syfc.com.cn/work/xjlp/door_list2.jsp?houseid=488423
 				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(i,third_record_id, "syfc_sales_build_detail" + third_record_id, url+ deltailUri,null);
 				consumerQueue.put(spider);
 			} catch (InterruptedException e) {
@@ -100,11 +100,13 @@ public class SYFCNewBuildDetailSpiderService {
 		//采集list生成采集任务
 		List<JSONObject> list = mongoTemplate.findAll(JSONObject.class, listCollectionName);
 		for (JSONObject jsonObject : list) {
-			JSONArray salesBuildList = jsonObject.getJSONArray("sales_build_list");
-			for (Object object : salesBuildList) {
-				JSONObject salesBuild = (JSONObject)object;
-				salesBuild.put("collect_state", 0);
-				mongoTemplate.insert(salesBuild,recordCollectionName+"_"+sdf_date.format(new Date()));
+			JSONArray buildList = jsonObject.getJSONArray("build_detail_list");
+			for (Object object : buildList) {
+				//栋信息
+				JSONObject house = (JSONObject)object;
+				house.put("collect_state", 0);
+				house.put("parent_third_record_id", jsonObject.get("third_record_id"));
+				mongoTemplate.insert(house,recordCollectionName+"_"+sdf_date.format(new Date()));
 			}
 		}
 		//TODO:改字段名
@@ -128,7 +130,7 @@ public class SYFCNewBuildDetailSpiderService {
 	public void saveResult(JSONObject ret) {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
-		String folderName = "syfc_build_detail_" + date_str;
+		String folderName = "syfc_build_house_" + date_str;
 		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
 		int no;
 		String body = ret.getString("body");
@@ -139,9 +141,9 @@ public class SYFCNewBuildDetailSpiderService {
 			logger.error("请求返回体发生错误 NO:{},请求发生请求页面失败错误",no);
 		}
 		// 保存文件
-		fileUtils.saveFile(folderName, "syfc_build_detail_"+third_record_id+"_"+sdf_iso.format(new Date()), body);
+		fileUtils.saveFile(folderName, "syfc_build_house_"+third_record_id+"_"+sdf_iso.format(new Date()), body);
 		// 解析页面
-		JSONArray parseBuildDetail = parser.parseNewBuildDetail(body);
+		JSONArray parseNewBuildHouse = parser.parseNewBuildHouse(body);
 		// 持久化解析结果到mongo
 		try {
 			Query detailQuery = new Query();
@@ -151,7 +153,7 @@ public class SYFCNewBuildDetailSpiderService {
 			if(salesNumRecord != null ) {
 				//update
 				Update update = Update.
-				update("build_detail_list", parseBuildDetail)
+				update("house_detail_list", parseNewBuildHouse)
 				.set("update_time", mongo_iso.format(new Date()))
 				.set("collect_state",1)//设置状态为1
 				;
@@ -162,7 +164,7 @@ public class SYFCNewBuildDetailSpiderService {
 				//insert
 				JSONObject insert = new JSONObject();
 				insert.put("collect_time", mongo_iso.format(new Date()));
-				insert.put("sales_build_list", parseBuildDetail);
+				insert.put("sales_build_list", parseNewBuildHouse);
 				insert.put("third_record_id", third_record_id);
 				insert.put("no", no);
 				insert.put("collect_state", 1);

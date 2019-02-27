@@ -141,7 +141,7 @@ public class SYFCSalesPriceTest {
 					String sales_no = td.get(4).text();// 预售许可证
 					String sales_price_deltail_uri = td.get(5).getElementsByTag("a").attr("href");// 详情页连接
 					String sales_price_program_localtion_detail = td.get(5).getElementsByTag("a").text();// 销售金额-项目地址-详情
-					String sales_price_third_pard_id = sales_price_deltail_uri.substring(
+					String sales_price_third_record_id = sales_price_deltail_uri.substring(
 							sales_price_deltail_uri.indexOf("('") + 1, sales_price_deltail_uri.indexOf("')"));// 第三方记录id;//第三方ID;//所属区
 					JSONObject json = new JSONObject();
 					json.put("sales_price_sub_no", sales_price_sub_no);
@@ -151,7 +151,7 @@ public class SYFCSalesPriceTest {
 					json.put("sales_no", sales_no);
 					json.put("sales_price_deltail_uri", sales_price_deltail_uri);
 					json.put("sales_price_program_localtion_detail", sales_price_program_localtion_detail);
-					json.put("sales_price_third_pard_id", sales_price_third_pard_id);
+					json.put("sales_price_third_record_id", sales_price_third_record_id);
 					System.out.println(json.toJSONString());
 				}
 			}

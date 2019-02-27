@@ -8,8 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
@@ -18,16 +16,15 @@ import com.hanson.spider.service.AnjukeSpiderService;
 import com.hzcf.base.exception.ControllerException;
 import com.hzcf.base.response.ResponseData;
 
-import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 /**
  * @author Hanson
  * create on 2018年3月11日
  */
-@RestController
-@RequestMapping(value = "/anjuke")
-@Api("安居客爬虫")
+//@RestController
+//@RequestMapping(value = "/anjuke")
+//@Api("安居客爬虫")
 public class AnjukeSpiderController{
 	@Autowired
 	AnjukeSpiderService spiderService;

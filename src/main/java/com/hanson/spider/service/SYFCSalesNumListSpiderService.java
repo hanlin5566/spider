@@ -1,5 +1,7 @@
 package com.hanson.spider.service;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,5 +257,31 @@ public class SYFCSalesNumListSpiderService {
 		query.addCriteria(Criteria.where("uuid").is(uuid));
 		Update update = Update.update("status", status);
 		mongoTemplate.updateFirst(query, update, taskCollectionName);
+	}
+	
+	public void recoverSalesNumList() {
+		int i = 0;
+		try {
+			File folder = new File("D:\\body\\syfc\\syfc_sales_num_508665aa75b64389bd27b187f7d18b15");
+			//UUID
+			if(folder.isDirectory()) {
+				File[] listFiles = folder.listFiles();
+				String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+				int[] status = new int[listFiles.length];
+				for (; i < listFiles.length; i++) {
+					FileInputStream fis = new FileInputStream(listFiles[i]);
+					String content = IOUtils.toString(fis);
+					JSONObject jsonObject = new JSONObject();
+					jsonObject.put("body", content);
+					jsonObject.put("no", i);
+					jsonObject.put("name", "syfc_sales" + i);
+					status[i] = 1;
+					this.saveResult(status, uuid, jsonObject);
+				}
+				
+			}
+		} catch (Exception e) {
+			logger.error("恢复数据发生错误 NO:{},请求发生错误",i,e);
+		}
 	}
 }

@@ -80,8 +80,11 @@ public class SYFCNewBuildListSpiderService {
 			}
 			//work/xjlp/new_building.jsp?page=2
 			int no = count.incrementAndGet();
-			SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(no, "syfc_new_build" + no, url+ "/work/xjlp/new_building.jsp?page="+no,null);
-			consumerQueue.put(spider);
+			for(int i = no; i <= 123; i++) {
+				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(no,no+"","syfc_new_build" + no, url+ "/work/xjlp/new_building.jsp?page="+no,null);
+				consumerQueue.put(spider);
+				no = count.incrementAndGet();
+			}
 		} catch (InterruptedException e) {
 			throw new ServiceException(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR,String.format(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR.detailMsg(), e.getMessage()), e);
 		}
@@ -93,7 +96,7 @@ public class SYFCNewBuildListSpiderService {
 	
 	private JSONObject readLastTask() {
 		Query query = new Query();
-		//不等于1的记录，未采集详情信息的记录
+		//采集最后一页，继续采集.
 		query.addCriteria(Criteria.where("collect_state").is(1));
 		query.with(new Sort(new Order(Direction.DESC,"no")));
 		JSONObject lastRecord = mongoTemplate.findOne(query, JSONObject.class, recordCollectionName);

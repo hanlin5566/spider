@@ -25,5 +25,14 @@ public class RabbitMQConfiguration {
 	public Queue syfcNewBuildListQueue() {
 		return new Queue("syfcNewBuildList");
 	}
+	
+	@Bean(name = "syfcSalesBuildDetail")
+	public Queue syfcSalesBuildDetailQueue() {
+		return new Queue("syfcSalesBuildDetail");
+	}
+	@Bean(name = "syfcSalesBuildHouse")
+	public Queue syfcSalesBuildHouseQueue() {
+		return new Queue("syfcSalesBuildHouse");
+	}
 }
 

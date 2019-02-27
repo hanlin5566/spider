@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.hanson.spider.misc.SaleStateEnum;
 import com.hanson.spider.misc.SpiderResponseCode;
 import com.hzcf.base.exception.ServiceException;
 
@@ -156,9 +157,9 @@ public class SYFCParser {
 				String company = td.get(3).text();//开发商
 				String start_sales_date = td.get(4).text();//开盘日期
 				String subordinate_district = td.get(5).text();//所属区
-				String third_pard_id = deltail_uri.substring(deltail_uri.indexOf("=")+1, deltail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+				String third_record_id = deltail_uri.substring(deltail_uri.indexOf("=")+1, deltail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
 				JSONObject json = new JSONObject();
-				json.put("third_pard_id", third_pard_id);
+				json.put("third_record_id", third_record_id);
 				json.put("deltail_uri", deltail_uri);
 				json.put("program_describe", program_describe);
 				json.put("district", district);
@@ -197,7 +198,7 @@ public class SYFCParser {
 				String sales_no = td.get(4).text();//预售许可证
 				String sales_price_deltail_uri = td.get(5).getElementsByTag("a").attr("href");//详情页连接
 				String sales_price_program_localtion_detail = td.get(5).getElementsByTag("a").text();//销售金额-项目地址-详情
-				String sales_price_third_pard_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+1, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
+				String sales_price_third_record_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+1, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
 				JSONObject json = new JSONObject();
 				json.put("sales_price_sub_no", sales_price_sub_no);
 				json.put("sales_price_approve_date", sales_price_approve_date);
@@ -206,11 +207,89 @@ public class SYFCParser {
 				json.put("sales_no", sales_no);
 				json.put("sales_price_deltail_uri", sales_price_deltail_uri);
 				json.put("sales_price_program_localtion_detail", sales_price_program_localtion_detail);
-				json.put("sales_price_third_pard_id", sales_price_third_pard_id);
+				json.put("sales_price_third_record_id", sales_price_third_record_id);
 				ret.add(json);
 			}
 		}
 		return ret;
+	}
+	
+	/**
+	 * 解析	新建筑栋列表
+	 * @param body
+	 * @return
+	 */
+	public JSONArray parseNewBuildDetail(String body) {
+		JSONArray ret = new JSONArray();
+		Document doc = Jsoup.parse(body);
+		/**
+		 * <tr>
+            <td width="199" height="25" align="center" bgcolor="#F1FAFF">楼栋地址</td>
+            <td width="124" align="center" bgcolor="#F1FAFF">当前可售套数</td>
+            <td width="122" align="center" bgcolor="#F1FAFF">不可售套数</td>
+            <td width="111" align="center" bgcolor="#F1FAFF">出售套数</td>
+            <td width="157" align="center" bgcolor="#F1FAFF">纳入网上销售总套数</td>
+          </tr>
+		 */
+		Elements trs = doc.getElementsByAttributeValueContaining("bgcolor", "#cccccc").get(0).getElementsByTag("tr");
+		for (int i = 1 ; i < trs.size() ; i++) {
+			Element element = trs.get(i);
+			Elements td = element.getElementsByTag("td");
+			String build_location = td.get(0).text();//楼栋地址
+			String sales_detail_uri = td.get(0).getElementsByTag("a").attr("href");//销售情况URL
+			String third_record_id = sales_detail_uri.substring(sales_detail_uri.indexOf("=")+1, sales_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+			String sales_available_count = td.get(1).text();//当前可售套数
+			String sales_unvailable_count = td.get(2).text();//不可售套数
+			String saled_count = td.get(3).text();//出售套数
+			String can_sales_count = td.get(4).text();//纳入网上销售总套数
+			
+			JSONObject jsonObject = new JSONObject();
+			jsonObject.put("third_record_id", third_record_id);
+			jsonObject.put("build_location", build_location);
+			jsonObject.put("sales_detail_uri", sales_detail_uri);
+			jsonObject.put("sales_available_count", sales_available_count);
+			jsonObject.put("sales_unvailable_count", sales_unvailable_count);	
+			jsonObject.put("saled_count", saled_count);
+			jsonObject.put("can_sales_count", can_sales_count);
+			ret.add(jsonObject);
+		}
+		return ret;
+	}
+	public JSONArray parseNewBuildHouse(String body) {
+		Document doc = Jsoup.parse(body);
+		Elements trs = doc.getElementsByTag("tr");
+		JSONArray tierArray = new JSONArray();
+		for (int i = 0 ; i < trs.size() ; i++) {
+			Element element = trs.get(i);
+			Elements tds = element.getElementsByTag("td");
+			JSONArray houseArray = new JSONArray();
+			for (int j = 1 ; j < tds.size() ; j++) {
+				JSONObject house = new JSONObject();
+				Element td0 = tds.get(0);
+				//第几层
+				String house_tier = td0.text();//第几层
+				Element td = tds.get(j);
+				//每层房屋销售情况
+				String house_detail_uri = td.getElementsByTag("a").attr("href");//房屋公摊连接
+				String third_record_id = house_detail_uri.substring(house_detail_uri.indexOf("=")+1, house_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+				String house_no = td.text();//房屋门牌号
+				//销售状态
+				String sales_state = td.attr("bgcolor");
+				String house_localtion = td.attr("xxx");
+				SaleStateEnum sales_state_enum = SaleStateEnum.textOf(sales_state);
+				house.put("house_tier", house_tier.substring(1, house_tier.length()-1));
+				house.put("sales_state_enum", JSONObject.toJSON(sales_state_enum).toString());
+				house.put("house_detail_uri", house_detail_uri);
+				house.put("third_record_id", third_record_id);
+				house.put("house_no", house_no);
+				house.put("house_localtion", house_localtion);
+				//每层添加房屋
+				houseArray.add(house);
+			}
+			//楼栋添加每层
+			tierArray.add(houseArray);
+		}
+		return tierArray;
 	}
 }
 
