@@ -70,7 +70,7 @@ public class SYFCSalesPriceListSpiderService {
 	@Value("${syfc.salesprice.uri:218.25.83.4:7003}")
 	private String url;
 	
-	
+	//http://218.25.83.4:7003/newbargain/download/findys/ys_info.jsp?kfs=&xmxq=&ldz=&ysid=&yzmcode=ssss&flagcx=1
 	/**
 	 * 改为单线程采集 
 	 **/
@@ -153,13 +153,13 @@ public class SYFCSalesPriceListSpiderService {
 	}
 	
 	public void recoverSalesPriceList(String folderPath) {
-		int i = 0;
 		try {
-			File folder = new File(folderPath);
+			String prefix_path = "D:\\body\\syfc_sales_price_";
+			File folder = new File(prefix_path+folderPath);
 			//UUID
 			if(folder.isDirectory()) {
 				File[] listFiles = folder.listFiles();
-				for (; i < listFiles.length; i++) {
+				for (int i = 0; i < listFiles.length; i++) {
 					FileInputStream fis = new FileInputStream(listFiles[i]);
 					String fileName = listFiles[i].getName();
 					String body = IOUtils.toString(fis);
@@ -208,7 +208,7 @@ public class SYFCSalesPriceListSpiderService {
 				
 			}
 		} catch (Exception e) {
-			logger.error("恢复数据发生错误 NO:{},请求发生错误",i,e);
+			logger.error("恢复数据发生错误,请求发生错误",e);
 		}
 	}
 }

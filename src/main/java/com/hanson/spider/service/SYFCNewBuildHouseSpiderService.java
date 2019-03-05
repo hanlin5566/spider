@@ -72,8 +72,9 @@ public class SYFCNewBuildHouseSpiderService {
 		List<JSONObject> unfinishedList = this.readUnFinishedTask();
 		for (int i = 0; i < unfinishedList.size(); i++) {
 			JSONObject jsonObject = unfinishedList.get(i);
-			String deltailUri = jsonObject.getString("deltail_uri");
+//			String deltailUri = jsonObject.getString("deltail_uri");
 			String third_record_id = jsonObject.getString("third_record_id");
+			String deltailUri = "/work/xjlp/door_list2.jsp?houseid="+third_record_id;
 			try {
 				//http://www.syfc.com.cn/work/xjlp/door_list2.jsp?houseid=488423
 				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(i,third_record_id, "syfc_sales_build_detail" + third_record_id, url+ deltailUri,null);
@@ -82,7 +83,7 @@ public class SYFCNewBuildHouseSpiderService {
 				throw new ServiceException(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR,String.format(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR.detailMsg(), e.getMessage()), e);
 			}
 		}
-		String queueName = "syfcSalesBuildDetail";
+		String queueName = "syfcSalesBuildHouse";
 		SpiderConsumerPushMQ consumer = new SpiderConsumerPushMQ(consumerQueue,sender,queueName);
 		
 		new Thread(consumer).start();
@@ -92,7 +93,7 @@ public class SYFCNewBuildHouseSpiderService {
 		Query query = new Query();
 		//不等于1的记录，未采集详情信息的记录
 		query.addCriteria(Criteria.where("collect_state").ne(1));
-		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
+		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName);
 		return list;
 	}
 	
@@ -106,7 +107,7 @@ public class SYFCNewBuildHouseSpiderService {
 				JSONObject house = (JSONObject)object;
 				house.put("collect_state", 0);
 				house.put("parent_third_record_id", jsonObject.get("third_record_id"));
-				mongoTemplate.insert(house,recordCollectionName+"_"+sdf_date.format(new Date()));
+				mongoTemplate.insert(house,recordCollectionName);
 			}
 		}
 		//TODO:改字段名
@@ -131,7 +132,7 @@ public class SYFCNewBuildHouseSpiderService {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
 		String folderName = "syfc_build_house_" + date_str;
-		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
+		String collectionName = recordCollectionName;
 		int no;
 		String body = ret.getString("body");
 		Boolean success = ret.getBoolean("success");

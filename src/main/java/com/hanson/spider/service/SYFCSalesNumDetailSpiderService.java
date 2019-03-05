@@ -12,6 +12,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +103,7 @@ public class SYFCSalesNumDetailSpiderService {
 	/**
 	 * 根据 预售许可证号 比较，增量添加 预售许可证列表
 	 * collection格式为collection_new
+	 * TODO：继续采集的noCount只有在重启的时候重置
 	 */
 	AtomicInteger noCount = new AtomicInteger(0);
 	public void incrementCollectSalesNo() {
@@ -121,7 +123,7 @@ public class SYFCSalesNumDetailSpiderService {
 		JSONArray parseSalesNoList = parser.parseSalesNoList(body);
 		//查找采集到的最后一个预售许可证，按照审批时间倒序
 		Query query = new Query();  
-		query.with(new Sort(new Order(Direction.DESC,"date")));
+		query.with(new Sort(new Order(Direction.DESC,"collect_time")));
 		JSONObject lastSalesDetail = mongoTemplate.findOne(query, JSONObject.class, salesNumberRecordCollectionName);
 		int no = lastSalesDetail.getInteger("sales_no");
 		String date = lastSalesDetail.getString("date");
@@ -134,7 +136,7 @@ public class SYFCSalesNumDetailSpiderService {
 			try {
 				long dateLong = sdf_date.parse(date).getTime();
 				long currentDateLong = sdf_date.parse(currentDate).getTime();
-				if(currentNo > no && currentDateLong > dateLong) {
+				if(currentNo > no && currentDateLong >= dateLong) {
 					//大于最后一次采集的许可证号贼新增
 					salesNO.put("no", reNo);
 					salesNO.put("collect_time", mongo_iso.format(new Date()));
@@ -160,26 +162,30 @@ public class SYFCSalesNumDetailSpiderService {
 		String folderName = "syfc_sales_num_detail" + date_str;
 		String body = ret.getString("body");
 		Boolean success = ret.getBoolean("success");
-		String id = ret.getString("id");//third_record_id
 		int no = ret.getInteger("no");
 		if(!success) {
 			logger.error("持久化mongo发生错误 NO:{},请求发生请求页面失败错误",no);
 		}
 		logger.info("syfc_sales_num_detail 采集成功，NO:{},正在入库。",no);
-		// 保存文件
-		fileUtils.saveFile(folderName, "syfc_salesNoDetail_"+id+"_"+sdf_iso.format(new Date()), body);
 		// 持久化解析结果到mongo
 		try {
 			// 解析页面
 			JSONObject parseSalesNoDetail = parser.parseSalesNoDetail(body);
 			Query salesNumDetailQuery = new Query();
-			salesNumDetailQuery.addCriteria(Criteria.where("third_record_id").is(parseSalesNoDetail.get("third_record_id")));
+			String third_record_id = parseSalesNoDetail.getString("third_record_id");
+			if(StringUtils.isEmpty(third_record_id)) {
+				logger.error("---采集不到第三方主鍵数据,地址{}",ret.get("url"));
+				return;
+			}
+			// 保存文件
+			fileUtils.saveFile(folderName, "syfc_salesNoDetail_"+third_record_id+"_"+sdf_iso.format(new Date()), body);
+			salesNumDetailQuery.addCriteria(Criteria.where("third_record_id").is(third_record_id));
 			JSONObject salesNumRecord = mongoTemplate.findOne(salesNumDetailQuery, JSONObject.class, salesNumberRecordCollectionName);
 			if(salesNumRecord != null ) {
 				//update
 				Update update = Update.
 				update("build_count", parseSalesNoDetail.get("build_count"))
-				.set("total_build_area", parseSalesNoDetail.get("build_count"))
+				.set("total_build_area", parseSalesNoDetail.get("total_build_area"))
 				.set("sales_area", parseSalesNoDetail.get("sales_area"))
 				.set("dwelling_area", parseSalesNoDetail.get("dwelling_area"))
 				.set("shop_area", parseSalesNoDetail.get("shop_area"))
@@ -224,6 +230,7 @@ public class SYFCSalesNumDetailSpiderService {
 					String content = IOUtils.toString(fis);
 					JSONObject ret = new JSONObject();
 					ret.put("body", content);
+					ret.put("id", content);
 					ret.put("no", fileName.split("_")[2]);
 					ret.put("success", true);
 					this.saveResult(ret);

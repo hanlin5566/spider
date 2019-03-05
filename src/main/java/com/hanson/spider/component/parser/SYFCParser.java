@@ -1,5 +1,6 @@
 package com.hanson.spider.component.parser;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,6 +41,7 @@ public class SYFCParser {
 			//div--td--tr
 			Element parent = element.parent().parent().parent();
 			Elements tds = parent.getElementsByTag("td");
+			//TODO:此处是字符串类型，导致sales_detail的no不是int
 			String no = tds.get(0).text();//编号
 			String date = tds.get(1).text();//审批日期
 			String company = tds.get(2).text();//开发商
@@ -76,6 +78,7 @@ public class SYFCParser {
 //		String  program_name  '' //项目名称
 		String  program_localtion  = elements.get(13).text();//项目位置
 		String build_count = elements.get(19).text();  //商品房栋数
+		//TODO:错误？？
 		String  total_build_area  = elements.get(25).text(); //总建筑面积
 		String  sales_area  = elements.get(31).text(); //销售面积
 		String  dwelling_area  = elements.get(37).text(); //住宅面积
@@ -198,7 +201,7 @@ public class SYFCParser {
 				String sales_no = td.get(4).text();//预售许可证
 				String sales_price_deltail_uri = td.get(5).getElementsByTag("a").attr("href");//详情页连接
 				String sales_price_program_localtion_detail = td.get(5).getElementsByTag("a").text();//销售金额-项目地址-详情
-				String sales_price_third_record_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+1, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
+				String sales_price_third_record_id = sales_price_deltail_uri.substring(sales_price_deltail_uri.indexOf("('")+2, sales_price_deltail_uri.indexOf("')"));//第三方记录id;//第三方ID;//所属区
 				JSONObject json = new JSONObject();
 				json.put("sales_price_sub_no", sales_price_sub_no);
 				json.put("sales_price_approve_date", sales_price_approve_date);
@@ -271,14 +274,17 @@ public class SYFCParser {
 				Element td = tds.get(j);
 				//每层房屋销售情况
 				String house_detail_uri = td.getElementsByTag("a").attr("href");//房屋公摊连接
-				String third_record_id = house_detail_uri.substring(house_detail_uri.indexOf("=")+1, house_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+				String third_record_id = "";
+				if(StringUtils.isNotEmpty(house_detail_uri)) {
+					third_record_id = house_detail_uri.substring(house_detail_uri.indexOf("=")+1, house_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+				}
 				String house_no = td.text();//房屋门牌号
 				//销售状态
 				String sales_state = td.attr("bgcolor");
 				String house_localtion = td.attr("xxx");
 				SaleStateEnum sales_state_enum = SaleStateEnum.textOf(sales_state);
 				house.put("house_tier", house_tier.substring(1, house_tier.length()-1));
-				house.put("sales_state_enum", JSONObject.toJSON(sales_state_enum).toString());
+				house.put("sales_state_enum", sales_state_enum.code());
 				house.put("house_detail_uri", house_detail_uri);
 				house.put("third_record_id", third_record_id);
 				house.put("house_no", house_no);

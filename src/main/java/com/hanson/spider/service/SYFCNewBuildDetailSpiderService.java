@@ -72,8 +72,9 @@ public class SYFCNewBuildDetailSpiderService {
 		List<JSONObject> unfinishedList = this.readUnFinishedTask();
 		for (int i = 0; i < unfinishedList.size(); i++) {
 			JSONObject jsonObject = unfinishedList.get(i);
-			String deltailUri = jsonObject.getString("deltail_uri");
+//			String deltailUri = jsonObject.getString("deltail_uri");
 			String third_record_id = jsonObject.getString("third_record_id");
+			String deltailUri = "/work/xjlp/build_list.jsp?xmmcid="+third_record_id;
 			try {
 				//http://www.syfc.com.cn/work/xjlp/build_list.jsp?xmmcid=64583&xmmc=居住、商业（一期）
 				SpiderConsumerPushMQ.Spider spider = new SpiderConsumerPushMQ.Spider(i,third_record_id, "syfc_sales_build_detail" + third_record_id, url+ deltailUri,null);
@@ -92,7 +93,8 @@ public class SYFCNewBuildDetailSpiderService {
 		Query query = new Query();
 		//不等于1的记录，未采集详情信息的记录
 		query.addCriteria(Criteria.where("collect_state").ne(1));
-		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
+		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName);
+//		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
 		return list;
 	}
 	
@@ -104,7 +106,8 @@ public class SYFCNewBuildDetailSpiderService {
 			for (Object object : salesBuildList) {
 				JSONObject salesBuild = (JSONObject)object;
 				salesBuild.put("collect_state", 0);
-				mongoTemplate.insert(salesBuild,recordCollectionName+"_"+sdf_date.format(new Date()));
+//				mongoTemplate.insert(salesBuild,recordCollectionName+"_"+sdf_date.format(new Date()));
+				mongoTemplate.insert(salesBuild,recordCollectionName);
 			}
 		}
 		//TODO:改字段名
@@ -129,7 +132,8 @@ public class SYFCNewBuildDetailSpiderService {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
 		String folderName = "syfc_build_detail_" + date_str;
-		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
+//		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
+		String collectionName = recordCollectionName;
 		int no;
 		String body = ret.getString("body");
 		Boolean success = ret.getBoolean("success");

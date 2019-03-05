@@ -3,6 +3,7 @@ package com.hanson.spider.parser;
 import java.io.FileInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -92,11 +93,12 @@ public class SYFCNewBuildParserTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testParseNewBuildHouse() {
 		FileInputStream fis;
 		String body;
 		try {
-			fis = new FileInputStream("D:\\body\\syfc\\syfc_new_build_house");
+			fis = new FileInputStream("D:\\body\\syfc_build_house_2019-02-28\\syfc_build_house_515643_2019-02-28_18-28-09");
 			body = IOUtils.toString(fis);
 			Document doc = Jsoup.parse(body);
 			Elements trs = doc.getElementsByTag("tr");
@@ -113,7 +115,10 @@ public class SYFCNewBuildParserTest {
 					Element td = tds.get(j);
 					//每层房屋销售情况
 					String house_detail_uri = td.getElementsByTag("a").attr("href");//房屋公摊连接
-					String third_record_id = house_detail_uri.substring(house_detail_uri.indexOf("=")+1, house_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+					String third_record_id = "";
+					if(StringUtils.isNotEmpty(house_detail_uri)) {
+						third_record_id = house_detail_uri.substring(house_detail_uri.indexOf("=")+1, house_detail_uri.indexOf("&"));//第三方记录id;//第三方ID;//所属区
+					}
 					String house_no = td.text();//房屋门牌号
 					//销售状态
 					String sales_state = td.attr("bgcolor");

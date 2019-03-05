@@ -6,13 +6,12 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.service.SYFCNewBuildHouseSpiderService;
 import com.rabbitmq.client.Channel;
 
-@Component
+//@Component
 @RabbitListener(queues = "syfcSalesBuildHouse")
 public class SYFCNewBuildHouseMQReceiver {
 	Logger logger = LoggerFactory.getLogger(this.getClass());

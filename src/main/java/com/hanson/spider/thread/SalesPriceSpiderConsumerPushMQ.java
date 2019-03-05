@@ -12,6 +12,7 @@ import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
@@ -31,6 +32,9 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 	
 	private String path = "/newbargain/download/findys/ys_info.jsp";
 	private String imagePath = "/newbargain/download/findys/image.jsp";
+	
+	@Value("${syfc.tesseract.path:/opt/}")
+	private String datapath;
 	
 	
 	private BlockingQueue<Spider> consumerQueue = null;
@@ -98,9 +102,8 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 			        fos.write(img);
 			        fos.close();
 			        ITesseract instance = new Tesseract();
-			        instance.setLanguage("chi_sim");
-			        String datapath = this.getClass().getResource("/").getPath();
-				    datapath = datapath.substring(1, datapath.length());
+				    instance.setLanguage("chi_sim");
+				    System.out.println(datapath);
 			        instance.setDatapath(datapath);
 			        //识别验证码
 			        String ocrResult = instance.doOCR(file);

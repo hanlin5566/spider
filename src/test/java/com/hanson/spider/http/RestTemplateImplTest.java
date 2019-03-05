@@ -40,6 +40,7 @@ public class RestTemplateImplTest {
 	}
 	
 	@Test
+	@Ignore
 	public void test() {
 		try {
 //			RestTemplateImpl rest = new RestTemplateImpl(); 

@@ -31,7 +31,7 @@ public class SpiderConsumerPushMQ implements Runnable {
 		this.queueName = queueName;
 		this.sender = sender;
 	}
-	private long sleepTime = 1000*5;//五分钟
+	private long sleepTime = 1000*3;//五分钟
 	private int connectTimeout = 1000*30;//五分钟
 	private int readTimeout = 1000*30;//五分钟
 	
@@ -68,6 +68,7 @@ public class SpiderConsumerPushMQ implements Runnable {
 				}
 				logger.info("采集{},NO{},ID{}",spider.getUrl(),no,id);
 				ret.put("body", content);
+				ret.put("url", url);
 				ret.put("no", no);
 				ret.put("id", id);
 				ret.put("name", name);

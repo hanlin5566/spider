@@ -50,7 +50,7 @@ public class SYFCParserTest {
 		FileInputStream fis;
 		String body;
 		try {
-			fis = new FileInputStream("D:\\body\\syfc_sales_num_detail2019-02-09\\syfc_salesNoDetail_1_2019-02-09_04-22-50");
+			fis = new FileInputStream("D:\\body\\syfc\\sales_no_detail.html");
 			body = IOUtils.toString(fis);
 			Document doc = Jsoup.parse(body);
 			Elements elements = doc.getElementsByTag("td");

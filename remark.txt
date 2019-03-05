@@ -1,0 +1,37 @@
+1.SalesNoDetail
+
+------salesNolist中sales_no_list数据结构
+ {
+    "date" : "2015-01-14",//审核日期
+    "no" : "2626",
+    "program_localtion" : "苏家屯四环路南22米规划路东",
+    "deltail_uri" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
+    "sales_no" : "15005",
+    "company" : "沈阳智富物流城开发有限公司",
+    "href" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
+    "third_record_id" : "17156199"
+}
+
+-------sales detail 入口----
+1.清洗时，由sales_list洗入，此时存入date--审核日期，并添加collect_time采集时间
+2.爬取详情时，写入approve_date--审核日期，并补全其余信息，按照third_record_id查找记录，如果找到更新，并写入collect_update_time,否则新增。添加collect_time
+3.TODO：从新增列表中写入
+
+-------新增salesno-------
+1.读取syfc_sales_num_detail，按照date倒序，查找最后一个slaeno
+2.当salesno大于记录中的salesno时，则放入syfc_sales_num_detail_new
+
+
+
+
+
+
+---------schedule------------
+
+1.每日爬取列表，比对detail。http://www.syfc.com.cn/work/ysxk/query_xukezheng.jsp
+POST http://localhost:9000/syfc/salesNo/incrementSalesNo
+2.新增数据清洗到sales_no_detail 
+POST http://localhost:9100/salesNo/increment
+3.继续爬取salesNODetail
+http://localhost:9000/syfc/salesNo/collectDetail
+4.清洗到mysql

@@ -32,6 +32,7 @@ public class SYFCSalesPriceTest {
 	private String urlLogin = "http://" + uri;
 
 	@Test
+	@Ignore
 	public void test() throws Exception {
 		ITesseract instance = new Tesseract();
 	    instance.setLanguage("chi_sim");
