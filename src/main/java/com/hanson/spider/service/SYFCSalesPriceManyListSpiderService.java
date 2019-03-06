@@ -1,14 +1,11 @@
 package com.hanson.spider.service;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +22,7 @@ import com.hanson.spider.component.FileUtils;
 import com.hanson.spider.component.parser.SYFCParser;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
 import com.hanson.spider.misc.SpiderResponseCode;
-import com.hanson.spider.thread.SalesPriceSpiderConsumerPushMQ;
+import com.hanson.spider.thread.SalesPriceManySpiderConsumerPushMQ;
 import com.hzcf.base.exception.ServiceException;
 
 /**
@@ -35,7 +32,7 @@ import com.hzcf.base.exception.ServiceException;
  * http://218.25.83.4:7003/newbargain/download/findys/ys_info.jsp
  */
 @Service
-public class SYFCSalesPriceListSpiderService {
+public class SYFCSalesPriceManyListSpiderService {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
@@ -56,7 +53,7 @@ public class SYFCSalesPriceListSpiderService {
 	//mongo 插入日期格式
 	private final String MONGO_ISO = "yyyy-MM-dd HH:mm:ss";
 	//mongo collection name
-	private final String recordCollectionName = "syfc_sales_price_list";
+	private final String recordCollectionName = "syfc_sales_price_many_list";
 	
 	
 	private final SimpleDateFormat sdf_date = new SimpleDateFormat(this.FORMAT_DATE);
@@ -78,20 +75,19 @@ public class SYFCSalesPriceListSpiderService {
 	 * 改为单线程采集 
 	 **/
 	public void collectPriceList(){
-		BlockingQueue<SalesPriceSpiderConsumerPushMQ.Spider> consumerQueue = new LinkedBlockingQueue<SalesPriceSpiderConsumerPushMQ.Spider>();
+		BlockingQueue<SalesPriceManySpiderConsumerPushMQ.Spider> consumerQueue = new LinkedBlockingQueue<SalesPriceManySpiderConsumerPushMQ.Spider>();
 		try {
 			List<JSONObject> readLastTask = readUnFinishedTask();
 			for (JSONObject jsonObject : readLastTask) {
-				String salesNo = jsonObject.getString("sales_no");
-				Integer no = jsonObject.getInteger("no");
-				SalesPriceSpiderConsumerPushMQ.Spider spider = new SalesPriceSpiderConsumerPushMQ.Spider(no, salesNo, "syfc_sales_price" + no, url, null);
+				Integer pageNum = jsonObject.getInteger("page_num");
+				SalesPriceManySpiderConsumerPushMQ.Spider spider = new SalesPriceManySpiderConsumerPushMQ.Spider(pageNum,"syfc_sales_price" + pageNum, url, null);
 				consumerQueue.put(spider);
 			}
 		} catch (InterruptedException e) {
 			throw new ServiceException(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR,String.format(SpiderResponseCode.SPIDER_GET_PRODUCER_ERROR.detailMsg(), e.getMessage()), e);
 		}
-		String queueName = "syfcSalesPriceList";
-		SalesPriceSpiderConsumerPushMQ consumer = new SalesPriceSpiderConsumerPushMQ(consumerQueue,sender,queueName,verifyCodeFolder,datapath);
+		String queueName = "syfcSalesPriceManyList";
+		SalesPriceManySpiderConsumerPushMQ consumer = new SalesPriceManySpiderConsumerPushMQ(consumerQueue,sender,queueName,verifyCodeFolder,datapath);
 		
 		new Thread(consumer).start();
 		
@@ -108,29 +104,27 @@ public class SYFCSalesPriceListSpiderService {
 	public void saveResult(JSONObject ret) {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
-		String folderName = "syfc_sales_price_" + date_str;
-		int no;
+		String folderName = "syfc_sales_price_many_list" + date_str;
 		String body = ret.getString("body");
-		String sales_no = ret.getString("sales_no");
+		Integer pageNum = ret.getInteger("pageNum");
 		Boolean success = ret.getBoolean("success");
-		no = ret.getInteger("no");
 		if(!success) {
-			logger.error("请求返回体发生错误 NO:{},请求发生请求页面失败错误",no);
+			logger.error("请求返回体发生错误 pageNum:{},请求发生请求页面失败错误",pageNum);
 		}
 		// 保存文件
-		fileUtils.saveFile(folderName, "syfc_sales_price_"+sales_no+"_"+sdf_iso.format(new Date()), body);
+		fileUtils.saveFile(folderName, "syfc_sales_price_many_list"+pageNum+"_"+sdf_iso.format(new Date()), body);
 		
 		// 解析页面
 		JSONArray parseList = parser.parseSalesPriceList(body);
 		// 持久化解析结果到mongo
 		if(parseList == null || parseList.size() == 0) {
-			logger.error("未解析到售价列表,不进行更新。salesNo:{},no:{}",sales_no,no);
+			logger.error("未解析到售价列表,不进行更新。pageNum:{}",pageNum);
 			return;
 		}
-		logger.info("syfc_sales_price_ 采集成功，NO:{},正在入库。",no);
+		logger.info("syfc_sales_price_many_list 采集成功，page_num:{},正在入库。",pageNum);
 		try {
 			Query salesNumDetailQuery = new Query();
-			salesNumDetailQuery.addCriteria(Criteria.where("sales_no").is(sales_no));
+			salesNumDetailQuery.addCriteria(Criteria.where("page_num").is(pageNum));
 			JSONObject salesNumRecord = mongoTemplate.findOne(salesNumDetailQuery, JSONObject.class, recordCollectionName);
 			if(salesNumRecord != null ) {
 				//update
@@ -146,72 +140,24 @@ public class SYFCSalesPriceListSpiderService {
 				JSONObject insert = new JSONObject();
 				insert.put("collect_time", mongo_iso.format(new Date()));
 				insert.put("sales_price_list", parseList);
-				insert.put("sales_no", sales_no);
+				insert.put("page_num", pageNum);
 				insert.put("collect_state", 1);
 				mongoTemplate.insert(insert,recordCollectionName);
 			}
 		} catch (Exception e) {
-			logger.error("持久化mongo发生错误 NO:{},请求发生错误",no,e);
+			logger.error("持久化mongo发生错误 pageNum:{},请求发生错误",pageNum,e);
+			throw new ServiceException(SpiderResponseCode.Spider_SALES_PAGE_ERROR);
 		}
 	}
 	
-	public void recoverSalesPriceList(String folderPath) {
-		try {
-			String prefix_path = "D:\\body\\syfc_sales_price_";
-			File folder = new File(prefix_path+folderPath);
-			//UUID
-			if(folder.isDirectory()) {
-				File[] listFiles = folder.listFiles();
-				for (int i = 0; i < listFiles.length; i++) {
-					FileInputStream fis = new FileInputStream(listFiles[i]);
-					String fileName = listFiles[i].getName();
-					String body = IOUtils.toString(fis);
-					//文件目录名称
-					String date_str = sdf_date.format(new Date());
-					String folderName = "syfc_sales_price_" + date_str;
-					String no = fileName.split("_")[3];
-					// 解析页面
-					JSONArray parseList = parser.parseSalesPriceList(body);
-					// 持久化解析结果到mongo
-					if(parseList == null || parseList.size() == 0) {
-						logger.error("未解析到售价列表,不进行更新。no:{}",no);
-						continue;
-					}
-					// 保存文件
-					JSONObject jsonObject = (JSONObject)parseList.get(0);
-					String sales_no = jsonObject.getString("sales_no");
-					fileUtils.saveFile(folderName, "syfc_sales_price_"+sales_no+"_"+sdf_iso.format(new Date()), body);
-					logger.info("syfc_sales_price_ 采集成功，NO:{},正在入库。",no);
-					try {
-						Query salesNumDetailQuery = new Query();
-						salesNumDetailQuery.addCriteria(Criteria.where("sales_no").is(sales_no));
-						JSONObject salesNumRecord = mongoTemplate.findOne(salesNumDetailQuery, JSONObject.class, recordCollectionName);
-						if(salesNumRecord != null ) {
-							//update
-							Update update = Update.
-							update("sales_price_list", parseList)
-							.set("update_time", mongo_iso.format(new Date()))
-							.set("collect_state",1)//设置状态为1
-							;
-							mongoTemplate.updateFirst(salesNumDetailQuery, update, recordCollectionName);
-						}else {
-							logger.error("数据不一致，新增预售许可证价格列表");
-							//insert
-							JSONObject insert = new JSONObject();
-							insert.put("collect_time", mongo_iso.format(new Date()));
-							insert.put("sales_price_list", parseList);
-							insert.put("sales_no", sales_no);
-							insert.put("collect_state", 1);
-							mongoTemplate.insert(insert,recordCollectionName);
-						}
-					} catch (Exception e) {
-						logger.error("持久化mongo发生错误 NO:{},请求发生错误",no,e);
-					}
-				}
-				
-			}
-		} catch (Exception e) {
-			logger.error("恢复数据发生错误,请求发生错误",e);
+	public void initSalesPriceManyList() {
+		for (int i = 1; i <= 1693; i++) {
+//		for (int i = 1; i <= 2; i++) {
+			Query query = new Query();
+			query.addCriteria(Criteria.where("page_num").is(i));
+			Update update = Update.
+			update("page_num",i);
+			mongoTemplate.upsert(query, update, recordCollectionName);
 		}
 	}
 }

@@ -1,10 +1,15 @@
 package com.hanson.spider.component.parser;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONArray;
@@ -19,6 +24,7 @@ import com.hzcf.base.exception.ServiceException;
  */
 @Component
 public class SYFCParser {
+	Logger logger = LoggerFactory.getLogger(this.getClass());
 	/**
 	 * 解析预售许可证列表页
 	 * @param body
@@ -291,6 +297,84 @@ public class SYFCParser {
 				house.put("house_localtion", house_localtion);
 				//每层添加房屋
 				houseArray.add(house);
+			}
+			//楼栋添加每层
+			tierArray.add(houseArray);
+		}
+		return tierArray;
+	}
+	
+	public JSONArray parsePriceDetail(String body) {
+		Document searchDoc = Jsoup.parse(body);
+		Elements levels = searchDoc.select(".T_song12bk2 .td2");
+		Map<String,String> changeKeyMap = new HashMap<String,String>();
+		changeKeyMap.put("房屋地址", "house_localtion");
+		changeKeyMap.put("预售许可证号", "sales_no");
+		changeKeyMap.put("房屋状态", "sales_state_enum");
+		changeKeyMap.put("总价", "total_price");
+		changeKeyMap.put("单价", "unit_price");
+		changeKeyMap.put("房屋用途", "house_use");
+		changeKeyMap.put("建筑面积", "house_build_area");
+		changeKeyMap.put("房屋结构", "house_structure");
+		changeKeyMap.put("可售", "1");
+		changeKeyMap.put("已售", "2");
+		//不循环最后一行
+		//每层
+		JSONArray tierArray = new JSONArray();
+		for (int x = levels.size()-2; x >= 0; x--) {
+			Element level = levels.get(x);
+			Elements tds = level.children();
+			JSONArray houseArray = new JSONArray();
+			//第几层
+			Element td0 = tds.get(0);
+			String house_tier = td0.text();//第几层
+			for (int j = 1 ; j < tds.size() ; j++) {
+				//每个单元
+				Element td = tds.get(j);
+				//每单元的房间
+				Elements housesTd = td.getElementsByTag("tr").get(0).children();
+				for (Element houseTd : housesTd) {
+					//每个房间
+					JSONObject house = new JSONObject();
+					//每层房屋销售情况
+					Element element = houseTd.getElementsByTag("tr").get(0);
+					String state = element.children().get(0).getElementsByTag("input").val();
+					//房屋描述
+					String houseDescribe = houseTd.getElementsByTag("tr").get(0).children().get(1).attr("xxx");
+					String[] split = houseDescribe.split("<br>");
+					//不检索最后一条详情数据
+					for (int i = 0; i < split.length-1; i++) {
+						String string = split[i];
+						try {
+							String[] describe = string.split("：");
+							String key = describe[0].substring(3, describe[0].length());
+							String value = describe[1].substring(4, describe[1].length());
+							//去除单位
+							value = value.replaceAll("元", "");
+							value = value.replaceAll("平方米", "");
+							if(changeKeyMap.containsKey(key)) {
+								key = changeKeyMap.get(key);
+							}
+							if(changeKeyMap.containsKey(value)) {
+								value = changeKeyMap.get(value);
+							}
+							
+							house.put(key, value);
+						} catch (Exception e) {
+							logger.error("解析售价描述出现异常:{}",string,e);
+						}
+					}
+					house.put("house_tier", house_tier.substring(1, house_tier.length()-1));
+					house.put("house_state", state);
+	//						house.put("sales_state_enum", JSONObject.toJSON(sales_state_enum).toString());
+	//						house.put("house_detail_uri", house_detail_uri);
+	//						house.put("third_record_id", third_record_id);
+	//						house.put("house_no", house_no);
+	//						house.put("house_localtion", house_localtion);
+					//每层添加房屋
+					houseArray.add(house);
+				}
+				
 			}
 			//楼栋添加每层
 			tierArray.add(houseArray);

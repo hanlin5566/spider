@@ -9,15 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONObject;
-import com.hanson.spider.service.SYFCSalesPriceListSpiderService;
+import com.hanson.spider.service.SYFCSalesPriceDetailSpiderService;
 import com.rabbitmq.client.Channel;
 
 @Component
-@RabbitListener(queues = "syfcSalesPriceList")
-public class SYFCSalesPriceListMQReceiver {
+@RabbitListener(queues = "syfcSalesPriceDetail")
+public class SYFCSalesPriceDetailMQReceiver {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
 	@Autowired
-	SYFCSalesPriceListSpiderService service;
+	SYFCSalesPriceDetailSpiderService service;
 	
     @RabbitHandler
     public void process(JSONObject msg,Channel channel, Message message) {
@@ -31,7 +31,7 @@ public class SYFCSalesPriceListMQReceiver {
         } catch (Exception e) {
             //丢弃这条消息
             //channel.basicNack(message.getMessageProperties().getDeliveryTag(), false,false);
-            logger.error("SYFCSalesPriceListMQReceiver receiver fail",e);
+            logger.error("SYFCNewBuildDetailMQReceiver receiver fail",e);
         }
     }
  

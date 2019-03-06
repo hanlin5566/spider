@@ -25,19 +25,20 @@ import net.sourceforge.tess4j.Tesseract;
  * @author Hanson create on 2019年2月8日
  */
 
-public class SalesPriceSpiderConsumerPushMQ implements Runnable {
+public class SalesPriceDetailConsumerPushMQ implements Runnable {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
     private RabbitMQSender sender;
-	
-	private String path = "/newbargain/download/findys/ys_info.jsp";
+    //http://218.25.83.4:7003/newbargain/download/findys/showPrice.jsp?buildingID=444323
+	private String path = "/newbargain/download/findys/showPrice.jsp";
 	private String imagePath = "/newbargain/download/findys/image.jsp";
+	
 	
 	private BlockingQueue<Spider> consumerQueue = null;
 	private String verifyCodeFolder;
 	private String queueName;
 	private String datapath;
 
-	public SalesPriceSpiderConsumerPushMQ(BlockingQueue<Spider> consumerQueue,RabbitMQSender sender,String queueName,String verifyCodeFolder,String datapath) {
+	public SalesPriceDetailConsumerPushMQ(BlockingQueue<Spider> consumerQueue,RabbitMQSender sender,String queueName,String verifyCodeFolder,String datapath) {
 		super();
 		this.consumerQueue = consumerQueue;
 		this.queueName = queueName;
@@ -45,7 +46,7 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 		this.sender = sender;
 		this.datapath = datapath;
 	}
-	private long sleepTime = 1000*10;//五分钟
+	private long sleepTime = 1000*2;//五分钟
 	private int connectTimeout = 1000*30;//五分钟
 	
 	@Override
@@ -56,11 +57,10 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 				boolean success = false;
 				JSONObject ret = new JSONObject();
 				String content = null;
-				int no = spider.getNo();
-				String salesNo = spider.getSalesNo();
+				int id = spider.getId();
 				String url = spider.getUrl();
 				String name = spider.getName();
-				logger.info("name:{},NO:{},休眠{}",name,no,sleepTime);
+				logger.info("name:{},NO:{},休眠{}",name,id,sleepTime);
 				Thread.sleep(sleepTime);
 				try {
 					
@@ -88,25 +88,25 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 			        image_connect.timeout(5 * 10000);
 			        Connection.Response iamge_response = image_connect.ignoreContentType(true).execute();
 			        byte[] img = iamge_response.bodyAsBytes();
-			        // 读取文件存储位置
+			        //读取文件存储位置
 			        //保存验证码
-			        File folder = new File(verifyCodeFolder);
+			        File folder = new File(verifyCodeFolder+"\\"+"price_detail");
 			        if(!folder.exists()) {
 			        	folder.mkdirs();
 			        }
-			        File file = new File(folder.getPath()+"\\"+salesNo+".jpg");
+			        
+			        File file = new File(folder.getPath()+"\\"+id+"_"+System.currentTimeMillis()+".jpg");
 			        FileOutputStream fos = new FileOutputStream(file);
 			        fos.write(img);
 			        fos.close();
 			        ITesseract instance = new Tesseract();
 				    instance.setLanguage("chi_sim");
-				    System.out.println(datapath);
 			        instance.setDatapath(datapath);
 			        //识别验证码
 			        String ocrResult = instance.doOCR(file);
-			    	//根据预售许可证模拟查询
-			    	//"ys_info.jsp?
-			    	String searchUrl = "http://"+url+path+"?ysid="+salesNo+"&yzmcode="+ocrResult+"&flagcx=1";
+			        logger.info("verifyCode:{}",ocrResult);
+			    	//模拟查询
+			    	String searchUrl = "http://"+url+path+"?buildingID="+id+"&yzmcode="+ocrResult+"&flagcx=1";
 			    	searchUrl = searchUrl.replaceAll("\r|\n","");
 			    	Connection searchConnection = Jsoup.connect(searchUrl);  
 			    	
@@ -120,12 +120,11 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 			    	content = searchResponse.body();
 					success = true;
 				} catch (Exception e) {
-					logger.error("http URI:{} NO:{},请求发生错误",url,no,e);
+					logger.error("http URI:{} NO:{},请求发生错误",url,id,e);
 				}
 				logger.info("采集{}",spider.getUrl());
 				ret.put("body", content);
-				ret.put("no", no);
-				ret.put("sales_no", salesNo);
+				ret.put("id", id);
 				ret.put("name", name);
 				ret.put("success", success);
 				//发送给消息队列
@@ -139,27 +138,19 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 	
 	public static class Spider implements Serializable{
 		private static final long serialVersionUID = 6811416960086949633L;
-		// 序号
-		private int no;
-		// 预售许可证
-		private String salesNo;
+		// 标识
+		private int id;
 		// 序号
 		private String name;
 		// url
 		private String url;
 		// param
 		private String param;
-		public String getSalesNo() {
-			return salesNo;
+		public int getId() {
+			return id;
 		}
-		public void setSalesNo(String salesNo) {
-			this.salesNo = salesNo;
-		}
-		public int getNo() {
-			return no;
-		}
-		public void setNo(int no) {
-			this.no = no;
+		public void setId(int id) {
+			this.id = id;
 		}
 		public String getName() {
 			return name;
@@ -179,10 +170,9 @@ public class SalesPriceSpiderConsumerPushMQ implements Runnable {
 		public void setParam(String param) {
 			this.param = param;
 		}
-		public Spider(int no, String salesNo, String name, String url, String param) {
+		public Spider(int id,String name, String url, String param) {
 			super();
-			this.no = no;
-			this.salesNo = salesNo;
+			this.id = id;
 			this.name = name;
 			this.url = url;
 			this.param = param;
