@@ -1,8 +1,11 @@
 package com.hanson.spider.service;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -54,7 +57,7 @@ public class SYFCSalesPriceDetailSpiderService {
 	private final String MONGO_ISO = "yyyy-MM-dd HH:mm:ss";
 	//mongo collection name
 	private final String recordCollectionName = "syfc_sales_price_detail";
-	private final String priceListCollectionName = "syfc_sales_price_many_list";
+	private final String priceListCollectionName = "syfc_sales_price_list";
 	
 	
 	private final SimpleDateFormat sdf_date = new SimpleDateFormat(this.FORMAT_DATE);
@@ -148,11 +151,15 @@ public class SYFCSalesPriceDetailSpiderService {
 		}
 	}
 	
+	/**
+	 * 根据many_list生成list
+	 */
+	@Deprecated
 	public void initSalesPriceDetail() {
 		Query query = new Query();
 		//采集成功的售价ID列表
 		query.addCriteria(Criteria.where("collect_state").is(1));
-		List<JSONObject> list = mongoTemplate.find(query,JSONObject.class, priceListCollectionName);
+		List<JSONObject> list = mongoTemplate.find(query,JSONObject.class, "syfc_sales_price_many_list");
 		for (JSONObject json : list) {
 			JSONArray salesPriceList = json.getJSONArray("sales_price_list");
 			for (Object salesPrice : salesPriceList) {
@@ -193,16 +200,125 @@ public class SYFCSalesPriceDetailSpiderService {
 				}else {
 					//insert
 					JSONObject insert = new JSONObject();
-					insert.put("init_time", mongo_iso.format(new Date()));
+					insert.put("collect_time", mongo_iso.format(new Date()));
+					insert.put("collect_state", 0);
+					insert.put("sync_state", 0);//是否同步到sales_price_detail
 					insert.put("third_record_id", third_record_id);
 					insert.put("program_localtion_detail", program_localtion_detail);
 					insert.put("approve_date", approve_date);
 					insert.put("company", company);
 					insert.put("sales_no", sales_no);
 					insert.put("program_describe", program_describe);
-					mongoTemplate.insert(insert,recordCollectionName);
+					mongoTemplate.insert(insert,priceListCollectionName);
 				}
 			}
+		}
+	}
+	
+	/**
+	 *去重数据
+	 */
+	public void discinctSalesPriceList() {
+		List<JSONObject> list = mongoTemplate.findAll(JSONObject.class, "syfc_sales_price_many_list");
+		List<Integer> list_ids = new ArrayList<Integer>();
+		for (JSONObject json : list) {
+			JSONArray salesPriceList = json.getJSONArray("sales_price_list");
+			for (Object salesPrice : salesPriceList) {
+				JSONObject salesPriceJsonObject = (JSONObject)salesPrice;
+				int third_record_id = salesPriceJsonObject.getInteger("sales_price_third_record_id");
+				if(!list_ids.contains(third_record_id)) {
+					list_ids.add(third_record_id);
+				}else {
+					logger.error("重复记录:{}",third_record_id);
+//					//删除重复记录
+					Query query = new Query();
+					query.addCriteria(Criteria.where("third_record_id").is(third_record_id));
+					List<JSONObject> find = mongoTemplate.find(query, JSONObject.class, priceListCollectionName);
+					if(find.size()>1) {
+//						Query delQuery = new Query();
+//						ObjectId id = (ObjectId)find.get(0).get("_id");
+//						delQuery.addCriteria(Criteria.where("_id").is(id));
+//						mongoTemplate.remove(delQuery, JSONObject.class,priceListCollectionName);
+						logger.info("删除重复记录:{}",third_record_id);
+					}else {
+						logger.info("新增记录:{}",third_record_id);
+					}
+				}
+			}
+		}
+		logger.info("重复记录:{}",list_ids.size());
+	}
+	
+	/**
+	 * 按照预售许可证 分组售价列表
+	 */
+	public void slesNumPriceListGenerator() {
+		List<JSONObject> list = mongoTemplate.findAll(JSONObject.class, "syfc_sales_price_many_list");
+		Map<Integer,List<JSONObject>> salesNo_salePriceList = new HashMap<Integer,List<JSONObject>>();
+		for (JSONObject json : list) {
+			JSONArray salesPriceList = json.getJSONArray("sales_price_list");
+			for (Object salesPrice : salesPriceList) {
+				JSONObject salesPriceJsonObject = (JSONObject)salesPrice;
+				try {
+					int sales_no = salesPriceJsonObject.getInteger("sales_no");
+					if(salesNo_salePriceList.containsKey(sales_no)) {
+						List<JSONObject> priceList = salesNo_salePriceList.get(sales_no);
+						priceList.add(salesPriceJsonObject);
+					}else {
+						List<JSONObject> priceList = new ArrayList<JSONObject>();
+						priceList.add(salesPriceJsonObject);
+						salesNo_salePriceList.put(sales_no, priceList);
+					}
+				} catch (Exception e) {
+					logger.info("预售许可证号异常:{}",salesPriceJsonObject.get("sales_no"));
+				}
+			}
+		}
+		for (Integer sales_no : salesNo_salePriceList.keySet()) {
+			List<JSONObject> sales_price_list = salesNo_salePriceList.get(sales_no);
+			JSONObject price = new JSONObject();
+			price.put("sales_no", sales_no);
+			price.put("sales_price_list", sales_price_list);
+			Query query = new Query();
+			query.addCriteria(Criteria.where("sales_no").is(sales_no));
+			Update update = Update.update("sales_price_list", sales_price_list);
+			mongoTemplate.upsert(query, update, JSONObject.class,"syfc_sales_num_price_list");
+		}
+	}
+	
+	/**
+	 * TODO:从syfc_sales_price_list同步到syfc_sales_price_detail
+	 */
+	public void syncSalesPriceDetail() {
+		//爬取list第一页，然后比对syfc_sales_price_detail如果没有则新增
+		Query query = new Query();
+		//未同步售价列表
+		query.addCriteria(Criteria.where("sync_state").ne(1));
+		List<JSONObject> list = mongoTemplate.find(query,JSONObject.class, priceListCollectionName);
+		for (JSONObject json : list) {
+			int third_record_id = json.getInteger("third_record_id");
+			Query updateQuery = new Query();
+			updateQuery.addCriteria(Criteria.where("third_record_id").is(third_record_id));
+			JSONObject salesPriceRecord = mongoTemplate.findOne(updateQuery, JSONObject.class, recordCollectionName);
+			if(salesPriceRecord == null ) {
+				//insert
+				JSONObject insert = new JSONObject();
+				insert.put("third_record_id", third_record_id);
+				insert.put("init_time", mongo_iso.format(new Date()));
+				insert.put("program_localtion_detail", json.getString("program_localtion_detail"));
+				insert.put("approve_date", json.getString("approve_date"));
+				insert.put("company", json.getString("company"));
+				insert.put("sales_no", json.getString("sales_no"));
+				insert.put("program_describe", json.getString("program_describe"));
+				insert.put("collect_state", 0);
+				mongoTemplate.insert(insert,recordCollectionName);
+			}
+			//FIXME:缺少事务可能数据不一致
+			//已经有数据了，变更sync状态
+			Update update = Update.
+			update("sync_state", 1)
+			;
+			mongoTemplate.updateFirst(updateQuery, update, priceListCollectionName);
 		}
 	}
 }

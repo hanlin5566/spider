@@ -31,22 +31,15 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping(value = "/syfc/salesNo")
 @Api("沈阳房产预售许可证详情")
-public class SYFCSalesNoDetailController {
+public class SYFCSalesNoController {
 	@Autowired
 	SYFCSalesNumDetailSpiderService detailSpiderService;
 	
 	@Autowired
 	SYFCSalesNumListSpiderService listSpiderService;
 	
-	@ApiOperation(value = "从文件恢复预售许可详情", notes = "从文件恢复预售许可详情")
-	@PostMapping("/recover")
-	public ResponseData recoverSalesNumDetail(@RequestBody JSONObject param) {
-		//D:\\body\\syfc_sales_num_detail2019-02-09
-		String folderPath = param.getString("folderPath");
-		detailSpiderService.recoverSalesNumDetail(folderPath);
-		return ResponseData.ok();
-	}
 	
+
 	@ApiOperation(value = "增量爬取沈阳房产预售证", notes="增量爬取沈阳房产预售证")
 	@PostMapping("/incrementSalesNo")
 	public ResponseData incrementCollectSalesNo() {
@@ -68,8 +61,20 @@ public class SYFCSalesNoDetailController {
 		return ResponseData.ok();
 	}
 	
+	
+	@ApiOperation(value = "从文件恢复预售许可详情", notes = "从文件恢复预售许可详情")
+	@PostMapping("/recover")
+	@Deprecated
+	public ResponseData recoverSalesNumDetail(@RequestBody JSONObject param) {
+		//D:\\body\\syfc_sales_num_detail2019-02-09
+		String folderPath = param.getString("folderPath");
+		detailSpiderService.recoverSalesNumDetail(folderPath);
+		return ResponseData.ok();
+	}
+	
 	@ApiOperation(value = "从文件恢复预售列表", notes = "从文件恢复预售列表")
 	@PostMapping("/recoverSalesNumList")
+	@Deprecated
 	public ResponseData recoverSalesNumList() {
 		listSpiderService.recoverSalesNumList();
 		return ResponseData.ok();
@@ -77,6 +82,7 @@ public class SYFCSalesNoDetailController {
 	
 	@ApiOperation(value = "全量爬取沈阳房产预售证", notes = "根据传入的参数，地址，返回爬取内容")
 	@PostMapping()
+	@Deprecated
 	public ResponseData execute(HttpServletRequest request) {
 		InputStream inputStream = null;
 		JSONObject recObject;
@@ -99,6 +105,7 @@ public class SYFCSalesNoDetailController {
 	
 	@ApiOperation(value = "继续爬取沈阳房产预售证", notes = "根据传入的taskId增量爬取数据")
 	@PostMapping("/{taskId}")
+	@Deprecated
 	public ResponseData continueExecute(@PathVariable String taskId) {
 		listSpiderService.continueGetSlaesNoByBlocked(taskId);
 		return ResponseData.ok();

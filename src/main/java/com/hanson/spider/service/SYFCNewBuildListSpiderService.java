@@ -31,6 +31,7 @@ import com.hzcf.base.exception.ServiceException;
  * @author Hanson create on 2018年3月11日
  * http://www.syfc.com.cn/work/xjlp/new_building.jsp
  * 新建楼盘列表采集
+ * 按页采集，并且将每页存入了一个document，每页的list为sales_build_list字段
  */
 @Service
 public class SYFCNewBuildListSpiderService {

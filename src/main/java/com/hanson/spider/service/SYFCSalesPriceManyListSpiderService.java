@@ -54,6 +54,7 @@ public class SYFCSalesPriceManyListSpiderService {
 	private final String MONGO_ISO = "yyyy-MM-dd HH:mm:ss";
 	//mongo collection name
 	private final String recordCollectionName = "syfc_sales_price_many_list";
+	private final String priceListCollectionName = "syfc_sales_price_list";
 	
 	
 	private final SimpleDateFormat sdf_date = new SimpleDateFormat(this.FORMAT_DATE);
@@ -90,7 +91,6 @@ public class SYFCSalesPriceManyListSpiderService {
 		SalesPriceManySpiderConsumerPushMQ consumer = new SalesPriceManySpiderConsumerPushMQ(consumerQueue,sender,queueName,verifyCodeFolder,datapath);
 		
 		new Thread(consumer).start();
-		
 	}
 	
 	public List<JSONObject> readUnFinishedTask() {
@@ -123,17 +123,17 @@ public class SYFCSalesPriceManyListSpiderService {
 		}
 		logger.info("syfc_sales_price_many_list 采集成功，page_num:{},正在入库。",pageNum);
 		try {
-			Query salesNumDetailQuery = new Query();
-			salesNumDetailQuery.addCriteria(Criteria.where("page_num").is(pageNum));
-			JSONObject salesNumRecord = mongoTemplate.findOne(salesNumDetailQuery, JSONObject.class, recordCollectionName);
-			if(salesNumRecord != null ) {
+			Query query = new Query();
+			query.addCriteria(Criteria.where("page_num").is(pageNum));
+			JSONObject salesPriceManyList = mongoTemplate.findOne(query, JSONObject.class, recordCollectionName);
+			if(salesPriceManyList != null ) {
 				//update
 				Update update = Update.
 				update("sales_price_list", parseList)
 				.set("update_time", mongo_iso.format(new Date()))
 				.set("collect_state",1)//设置状态为1
 				;
-				mongoTemplate.updateFirst(salesNumDetailQuery, update, recordCollectionName);
+				mongoTemplate.updateFirst(query, update, recordCollectionName);
 			}else {
 				logger.error("数据不一致，新增预售许可证价格列表");
 				//insert
@@ -144,6 +144,46 @@ public class SYFCSalesPriceManyListSpiderService {
 				insert.put("collect_state", 1);
 				mongoTemplate.insert(insert,recordCollectionName);
 			}
+			
+			//更新salesprice_list
+			for (Object object : parseList) {
+				JSONObject json = (JSONObject)object;
+				int third_record_id = json.getInteger("sales_price_third_record_id");
+				String program_localtion_detail = json.getString("sales_price_program_localtion_detail");
+				String approve_date = json.getString("sales_price_approve_date");
+				String company = json.getString("sales_price_company");
+				String sales_no = json.getString("sales_no");
+				String program_describe = json.getString("sales_price_program_describe");
+				Query updateQuery = new Query();
+				updateQuery.addCriteria(Criteria.where("third_record_id").is(third_record_id));
+				JSONObject salesPriceRecord = mongoTemplate.findOne(updateQuery, JSONObject.class, priceListCollectionName);
+				if(salesPriceRecord != null ) {
+					//update 暂时不更新
+//					Update update = Update.
+//					update("sales_price_list", parseList)
+//					update.("program_localtion_detail", program_localtion_detail).
+//					set("approve_date", approve_date);
+//					insert.put("company", company);
+//					insert.put("sales_no", sales_no);
+//					insert.put("program_describe", program_describe);
+//					.set("update_time", mongo_iso.format(new Date()))
+//					;
+//					mongoTemplate.updateFirst(updateQuery, update, recordCollectionName);
+				}else {
+					//insert
+					JSONObject insert = new JSONObject();
+					insert.put("collect_time", mongo_iso.format(new Date()));
+					insert.put("collect_state", 0);
+					insert.put("sync_state", 0);//是否同步到sales_price_detail
+					insert.put("third_record_id", third_record_id);
+					insert.put("program_localtion_detail", program_localtion_detail);
+					insert.put("approve_date", approve_date);
+					insert.put("company", company);
+					insert.put("sales_no", sales_no);
+					insert.put("program_describe", program_describe);
+					mongoTemplate.insert(insert,priceListCollectionName);
+				}
+			}
 		} catch (Exception e) {
 			logger.error("持久化mongo发生错误 pageNum:{},请求发生错误",pageNum,e);
 			throw new ServiceException(SpiderResponseCode.Spider_SALES_PAGE_ERROR);
@@ -151,8 +191,7 @@ public class SYFCSalesPriceManyListSpiderService {
 	}
 	
 	public void initSalesPriceManyList() {
-		for (int i = 1; i <= 1693; i++) {
-//		for (int i = 1; i <= 2; i++) {
+		for (int i = 1; i <= 1694; i++) {
 			Query query = new Query();
 			query.addCriteria(Criteria.where("page_num").is(i));
 			Update update = Update.

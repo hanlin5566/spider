@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hanson.spider.service.SYFCNewBuildDetailSpiderService;
 import com.hanson.spider.service.SYFCNewBuildHouseSpiderService;
 import com.hanson.spider.service.SYFCNewBuildListSpiderService;
-import com.hanson.spider.service.SYFCSalesPriceListSpiderService;
 import com.hzcf.base.response.ResponseData;
 
 import io.swagger.annotations.Api;
@@ -19,26 +18,24 @@ import io.swagger.annotations.ApiOperation;
  * create on 2018年3月11日
  */
 @RestController
-@RequestMapping(value = "/syfc")
-@Api("沈阳房产爬虫")
-public class SYFCSpiderController{
+@RequestMapping(value = "/syfc/build")
+@Api("沈阳房产-新建楼栋")
+public class SYFCSalesBuildController{
 	@Autowired
 	SYFCNewBuildListSpiderService newBuildSpiderService;
 	@Autowired
 	SYFCNewBuildDetailSpiderService newBuildDetailSpiderService;
 	@Autowired
-	SYFCSalesPriceListSpiderService salesPricelistSpiderService;
-	@Autowired
 	SYFCNewBuildHouseSpiderService houseSpiderService;
 	
-	@ApiOperation(value = "爬取沈阳房产新建楼盘列表", notes = "根据传入的taskId增量爬取数据")
+	@ApiOperation(value = "爬取沈阳房产新建楼盘列表", notes = "按页采集，并且将每页存入了一个document，每页的list为sales_build_list字段")
 	@PostMapping("/collectNewBuildList")
 	public ResponseData collectNewBuildList() {
 		newBuildSpiderService.collectNewBuildList();
 		return ResponseData.ok();
 	}
 	
-	@ApiOperation(value = "抽取沈阳房产新建楼盘列表", notes = "根据传入的taskId增量爬取数据")
+	@ApiOperation(value = "抽取沈阳房产新建楼盘列表", notes = "根据build列表生成detail，抽取sales_build_list展开为单独的document")
 	@PostMapping("/transformBuildDetailTask")
 	public ResponseData transformTask() {
 		newBuildDetailSpiderService.transformTask();
@@ -52,9 +49,23 @@ public class SYFCSpiderController{
 		return ResponseData.ok();
 	}
 	
+	@ApiOperation(value = "增量爬取沈阳房产新建楼盘详情" , notes = "")
+	@PostMapping("/incrementNewBuildDetail")
+	public ResponseData incrementNewBuildDetail() {
+		newBuildDetailSpiderService.incrementNewBuildDetail();
+		return ResponseData.ok();
+	}
+	
+	@ApiOperation(value = "初始化每日新建楼盘任务" , notes = "")
+	@PostMapping("/initTodayNewBuildDetail")
+	public ResponseData initTodayNewBuildDetail() {
+		newBuildDetailSpiderService.initTodayNewBuildDetail();
+		return ResponseData.ok();
+	}
+	
 	
 	@ApiOperation(value = "采集房屋销售情况详情", notes = "")
-	@PostMapping("/collectHouseList")
+	@PostMapping("/collectNewHouseDetail")
 	public ResponseData collectHouseList() {
 		houseSpiderService.collectNewHouseDetail();
 		return ResponseData.ok();

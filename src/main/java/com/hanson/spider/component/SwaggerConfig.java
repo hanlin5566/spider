@@ -23,7 +23,7 @@ public class SwaggerConfig {
 	@Bean
 	public Docket controllerApi() {
 		return new Docket(DocumentationType.SWAGGER_2)
-				.apiInfo(new ApiInfoBuilder().title("标题：怕从信息管理系统_接口文档")
+				.apiInfo(new ApiInfoBuilder().title("标题：翰林")
 						.description("描述：...").contact("hanson")
 						.version("版本号:1.0").build())
 				.select().apis(RequestHandlerSelectors.basePackage("com.hanson.spider.controller")).paths(PathSelectors.any())

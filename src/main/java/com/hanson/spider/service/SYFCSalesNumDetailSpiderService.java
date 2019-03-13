@@ -123,7 +123,7 @@ public class SYFCSalesNumDetailSpiderService {
 		JSONArray parseSalesNoList = parser.parseSalesNoList(body);
 		//查找采集到的最后一个预售许可证，按照审批时间倒序
 		Query query = new Query();  
-		query.with(new Sort(new Order(Direction.DESC,"collect_time")));
+		query.with(new Sort(new Order(Direction.DESC,"approve_date")));
 		JSONObject lastSalesDetail = mongoTemplate.findOne(query, JSONObject.class, salesNumberRecordCollectionName);
 		int no = lastSalesDetail.getInteger("sales_no");
 		String date = lastSalesDetail.getString("date");
@@ -203,6 +203,8 @@ public class SYFCSalesNumDetailSpiderService {
 				.set("remark", parseSalesNoDetail.get("remark"))
 				.set("update_time", mongo_iso.format(new Date()))
 				.set("collect_state",1)//设置状态为1
+				//有信修改数据
+				.set("transform_state",0)//同步状态为1
 				;
 				mongoTemplate.updateFirst(salesNumDetailQuery, update, salesNumberRecordCollectionName);
 			}else {

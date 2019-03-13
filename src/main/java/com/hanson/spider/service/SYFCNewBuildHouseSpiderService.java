@@ -97,18 +97,34 @@ public class SYFCNewBuildHouseSpiderService {
 		return list;
 	}
 	
+	/**
+	 * 根据gen_house_task，生成为采集的house信息
+	 */
 	public void transformTask() {
-		//采集list生成采集任务
-		List<JSONObject> list = mongoTemplate.findAll(JSONObject.class, listCollectionName);
+		//查找未生成的list数据生成house采集任务
+		Query query = new Query();
+		query.addCriteria(Criteria.where("gen_house_task").ne(1));
+		List<JSONObject> list = mongoTemplate.find(query,JSONObject.class, listCollectionName);
 		for (JSONObject jsonObject : list) {
 			JSONArray buildList = jsonObject.getJSONArray("build_detail_list");
 			for (Object object : buildList) {
 				//栋信息
 				JSONObject house = (JSONObject)object;
-				house.put("collect_state", 0);
-				house.put("parent_third_record_id", jsonObject.get("third_record_id"));
-				mongoTemplate.insert(house,recordCollectionName);
+				//根据house_third_record_id判断是否插入过
+				Query house_query = new Query();
+				house_query.addCriteria(Criteria.where("third_record_id").ne(house.getString("third_record_id")));
+				JSONObject find = mongoTemplate.findOne(house_query,JSONObject.class, recordCollectionName);
+				if(find == null) {
+					house.put("collect_state", 0);
+					house.put("parent_third_record_id", jsonObject.get("third_record_id"));
+					mongoTemplate.insert(house,recordCollectionName);
+				}
 			}
+			//更新未已经生成house采集信息
+			Query updateQuery = new Query();
+			updateQuery.addCriteria(Criteria.where("third_record_id").is(jsonObject.get("third_record_id")));
+			Update update = Update.update("gen_house_task", 1);
+			mongoTemplate.updateFirst(updateQuery, update, JSONObject.class,listCollectionName);
 		}
 		//TODO:改字段名
 //		List<JSONObject> list = mongoTemplate.findAll(JSONObject.class, listCollectionName);

@@ -16,11 +16,6 @@ public class RabbitMQConfiguration {
          return new Queue("syfcSalesNumDetail");
     }
 	
-	@Bean(name = "syfcSalesPriceList")
-	public Queue syfcSalesPriceListQueue() {
-		return new Queue("syfcSalesPriceList");
-	}
-	
 	@Bean(name = "syfcNewBuildList")
 	public Queue syfcNewBuildListQueue() {
 		return new Queue("syfcNewBuildList");
@@ -29,6 +24,11 @@ public class RabbitMQConfiguration {
 	@Bean(name = "syfcSalesPriceManyList")
 	public Queue syfcNewBuildManyListQueue() {
 		return new Queue("syfcSalesPriceManyList");
+	}
+	
+	@Bean(name = "syfcSalesPriceList")
+	public Queue syfcSalesPriceListQueue() {
+		return new Queue("syfcSalesPriceList");
 	}
 	
 	@Bean(name = "syfcSalesBuildDetail")

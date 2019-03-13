@@ -29,6 +29,7 @@ import net.sourceforge.tess4j.Tesseract;
 /**
  * @author Hanson create on 2019年2月6日
  */
+@Ignore
 public class SYFCSalesPriceTest {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
 	private String uri = "218.25.83.4:7003/newbargain/download/findys/ys_info.jsp";

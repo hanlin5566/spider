@@ -25,7 +25,7 @@ import net.sourceforge.tess4j.Tesseract;
  * @author Hanson create on 2019年2月8日
  */
 
-public class SalesPriceManySpiderConsumerPushMQ implements Runnable {
+public class SalesPriceListSpiderConsumerPushMQ implements Runnable {
 	Logger logger = LoggerFactory.getLogger(this.getClass());
     private RabbitMQSender sender;
 	
@@ -38,7 +38,7 @@ public class SalesPriceManySpiderConsumerPushMQ implements Runnable {
 	private String queueName;
 	private String datapath;
 
-	public SalesPriceManySpiderConsumerPushMQ(BlockingQueue<Spider> consumerQueue,RabbitMQSender sender,String queueName,String verifyCodeFolder,String datapath) {
+	public SalesPriceListSpiderConsumerPushMQ(BlockingQueue<Spider> consumerQueue,RabbitMQSender sender,String queueName,String verifyCodeFolder,String datapath) {
 		super();
 		this.consumerQueue = consumerQueue;
 		this.queueName = queueName;
@@ -61,8 +61,7 @@ public class SalesPriceManySpiderConsumerPushMQ implements Runnable {
 			}
 		}
 	}
-
-
+	
 	private void execute(Spider spider) throws InterruptedException {
 		Thread t = new Thread(new Runnable() {
 			@Override
@@ -152,7 +151,7 @@ public class SalesPriceManySpiderConsumerPushMQ implements Runnable {
 	
 	
 	public static class Spider implements Serializable{
-		private static final long serialVersionUID = 6811416960086949633L;
+		private static final long serialVersionUID = 681141696008694553L;
 		// 页码
 		private int pageNum;
 		// 序号

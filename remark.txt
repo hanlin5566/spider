@@ -1,25 +1,25 @@
-1.SalesNoDetail
+ï»¿1.SalesNoDetail
 
-------salesNolistÖĞsales_no_listÊı¾İ½á¹¹
+------salesNolistä¸­sales_no_listæ•°æ®ç»“æ„
  {
-    "date" : "2015-01-14",//ÉóºËÈÕÆÚ
+    "date" : "2015-01-14",//å®¡æ ¸æ—¥æœŸ
     "no" : "2626",
-    "program_localtion" : "ËÕ¼ÒÍÍËÄ»·Â·ÄÏ22Ã×¹æ»®Â·¶«",
+    "program_localtion" : "è‹å®¶å±¯å››ç¯è·¯å—22ç±³è§„åˆ’è·¯ä¸œ",
     "deltail_uri" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
     "sales_no" : "15005",
-    "company" : "ÉòÑôÖÇ¸»ÎïÁ÷³Ç¿ª·¢ÓĞÏŞ¹«Ë¾",
+    "company" : "æ²ˆé˜³æ™ºå¯Œç‰©æµåŸå¼€å‘æœ‰é™å…¬å¸",
     "href" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
     "third_record_id" : "17156199"
 }
 
--------sales detail Èë¿Ú----
-1.ÇåÏ´Ê±£¬ÓÉsales_listÏ´Èë£¬´ËÊ±´æÈëdate--ÉóºËÈÕÆÚ£¬²¢Ìí¼Ócollect_time²É¼¯Ê±¼ä
-2.ÅÀÈ¡ÏêÇéÊ±£¬Ğ´Èëapprove_date--ÉóºËÈÕÆÚ£¬²¢²¹È«ÆäÓàĞÅÏ¢£¬°´ÕÕthird_record_id²éÕÒ¼ÇÂ¼£¬Èç¹ûÕÒµ½¸üĞÂ£¬²¢Ğ´Èëcollect_update_time,·ñÔòĞÂÔö¡£Ìí¼Ócollect_time
-3.TODO£º´ÓĞÂÔöÁĞ±íÖĞĞ´Èë
+-------sales detail å…¥å£----
+1.æ¸…æ´—æ—¶ï¼Œç”±sales_listæ´—å…¥ï¼Œæ­¤æ—¶å­˜å…¥date--å®¡æ ¸æ—¥æœŸï¼Œå¹¶æ·»åŠ collect_timeé‡‡é›†æ—¶é—´
+2.çˆ¬å–è¯¦æƒ…æ—¶ï¼Œå†™å…¥approve_date--å®¡æ ¸æ—¥æœŸï¼Œå¹¶è¡¥å…¨å…¶ä½™ä¿¡æ¯ï¼ŒæŒ‰ç…§third_record_idæŸ¥æ‰¾è®°å½•ï¼Œå¦‚æœæ‰¾åˆ°æ›´æ–°ï¼Œå¹¶å†™å…¥collect_update_time,å¦åˆ™æ–°å¢ã€‚æ·»åŠ collect_time
+3.TODOï¼šä»æ–°å¢åˆ—è¡¨ä¸­å†™å…¥
 
--------ĞÂÔösalesno-------
-1.¶ÁÈ¡syfc_sales_num_detail£¬°´ÕÕdateµ¹Ğò£¬²éÕÒ×îºóÒ»¸öslaeno
-2.µ±salesno´óÓÚ¼ÇÂ¼ÖĞµÄsalesnoÊ±£¬Ôò·ÅÈësyfc_sales_num_detail_new
+-------æ–°å¢salesno-------
+1.è¯»å–syfc_sales_num_detailï¼ŒæŒ‰ç…§dateå€’åºï¼ŒæŸ¥æ‰¾æœ€åä¸€ä¸ªslaeno
+2.å½“salesnoå¤§äºè®°å½•ä¸­çš„salesnoæ—¶ï¼Œåˆ™æ”¾å…¥syfc_sales_num_detail_new
 
 
 
@@ -28,10 +28,51 @@
 
 ---------schedule------------
 
-1.Ã¿ÈÕÅÀÈ¡ÁĞ±í£¬±È¶Ôdetail¡£http://www.syfc.com.cn/work/ysxk/query_xukezheng.jsp
+*************sales nim*************
+1.æ¯æ—¥çˆ¬å–åˆ—è¡¨ï¼Œæ¯”å¯¹detailã€‚http://www.syfc.com.cn/work/ysxk/query_xukezheng.jsp
 POST http://localhost:9000/syfc/salesNo/incrementSalesNo
-2.ĞÂÔöÊı¾İÇåÏ´µ½sales_no_detail 
+2.æ–°å¢æ•°æ®æ¸…æ´—åˆ°sales_no_detail 
 POST http://localhost:9100/salesNo/increment
-3.¼ÌĞøÅÀÈ¡salesNODetail
+3.ç»§ç»­çˆ¬å–salesNODetail
 http://localhost:9000/syfc/salesNo/collectDetail
-4.ÇåÏ´µ½mysql
+4.æ¸…æ´—åˆ°mysql
+http://192.168.1.13:9100/salesNo/detail
+*************sales nim*************
+
+*************new build*************
+syfc_new_build_detail --> å…¨é‡æœ€æ–°
+syfc_new_build_detail_2019-03-12 -->å½“å¤©é‡‡é›†çš„ç”¨äºæ¯”å¯¹å†å²
+syfc_new_build_list -->åˆ—è¡¨ï¼Œå…¨é‡é‡‡é›†ä¸€æ¬¡æ€§æ”¶é›†ã€‚
+
+1.æ¯æ—¥çˆ¬å–åˆ—è¡¨ï¼Œå¯¹æ¯”detail http://www.syfc.com.cn/work/xjlp/new_building.jsp
+POST http://192.168.1.13:9000/syfc/build/incrementNewBuildDetail
+syfc_new_build_detail -->å…¨é‡&æœ€æ–°
+2.ç”Ÿæˆé‡‡é›†åˆ—è¡¨
+POST http://localhost:9000/syfc/build/initTodayNewBuildDetail
+syfc_new_build_detail_2019_03_08 -->å½“æ—¥ï¼Œå†å²
+3.é‡‡é›†åˆ—è¡¨
+http://localhost:9000/syfc/build/collectNewBuildDetail
+syfc_new_build_detail_2019_03_08 -->å½“æ—¥ï¼Œå†å²
+æ›´æ–°syfc_new_build_detail -->å…¨é‡&æœ€æ–°
+4.æ¸…æ´—ï¼Ÿï¼Ÿï¼Ÿ
+*************new build*************
+
+*************å”®ä»·***********  16935
+é—®é¢˜
+1.è¿˜èƒ½æœ‰5698ä¸ªsalesnoæ²¡æœ‰ç›¸åº”çš„å”®ä»·åˆ—è¡¨db.getCollection('syfc_sales_num_detail').find({"sales_price_collect_state":{$ne:1}}).count()
+2.DONE:ä»22é¡µå¼€å§‹çˆ¬å–æ—¢å¯ä»¥ã€‚é—®é¢˜ï¼šæ¯æ—¥å¢é‡æ—¶æ²¡æœ‰æ’åºè§„åˆ™ï¼Œæ— æ³•è·å–æ–°å¢çš„æ•°æ®ï¼Œè€Œä¸”æ•°æ®ä¸­æŒ‰ç…§third_record_idæœ‰é‡å¤ï¼Œä½†æ˜¯sales_noä¸ä¸€è‡´
+3.syfc_sales_price_list--syfc_sales_price_detailçœ‹èµ·æ¥æ˜¯å†—ä½™äº†
+
+
+syfc_sales_price_many_list-->åˆ—è¡¨
+syfc_sales_price_list-->å¹³é“ºå”®ä»·åˆ—è¡¨
+syfc_sales_num_price_list-->é”€å”®å·-åˆ—è¡¨åˆ†ç»„
+syfc_sales_price_detail-->å”®ä»·è¯¦æƒ…
+
+//æ¯æ¬¡ä»22é¡µå¼€å§‹çˆ¬å–ï¼Œçˆ¬å–ä¸‰é¡µï¼Œæ¯”å¯¹ç¬¬ä¸‰æ–¹Idå¦‚æœæ²¡æœ‰åˆ™æ’å…¥
+1.æ¯æ—¥çˆ¬å–åˆ—è¡¨ï¼Œå¯¹æ¯”price_list http://218.25.83.4:7003/newbargain/download/findys/ys_info.jsp?kfs=&xmxq=&ldz=&ysid=&yzmcode=ssss&flagcx=1
+POST http://192.168.1.13:9000/syfc/salesPirce/incrementtSalesPrice
+2.åŒæ­¥sales_price_list
+POST http://192.168.1.13:9000/syfc/salesPirce/syncSalesPriceDetail
+3.æ¯æ—¥çˆ¬å–å”®ä»·è¯¦æƒ…
+POST http://192.168.1.13:9000/syfc/salesPirce/collectSalesPriceDetail

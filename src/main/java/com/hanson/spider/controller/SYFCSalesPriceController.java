@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,9 +33,9 @@ import net.sourceforge.tess4j.TesseractException;
 @Api("沈阳售价列表")
 public class SYFCSalesPriceController {
 	@Autowired
-	SYFCSalesPriceListSpiderService salesPricelistSpiderService;
-	@Autowired
 	SYFCSalesPriceManyListSpiderService salesPriceManylistSpiderService;
+	@Autowired
+	SYFCSalesPriceListSpiderService salesPriceListSpiderService;
 	@Autowired
 	SYFCSalesPriceDetailSpiderService salesPriceDetailSpiderService;
 	
@@ -63,20 +62,22 @@ public class SYFCSalesPriceController {
 	}
 	
 	
-	@ApiOperation(value = "爬取沈阳房产销售价格列表", notes = "根据预售许可证爬取数据")
-	@PostMapping("/collectPriceList")
-	public ResponseData collectPriceList() {
-		salesPricelistSpiderService.collectPriceList();
-		return ResponseData.ok();
-	}
-	
-	
-	@ApiOperation(value = "从文件恢复沈阳房产销售价格列表", notes = "只需要输入日起即可 2019-02-10")
-	@PostMapping("/recoverPriceList/{folderPath}")
-	public ResponseData recoverPriceList(@PathVariable String folderPath) {
-		salesPricelistSpiderService.recoverSalesPriceList(folderPath);
-		return ResponseData.ok();
-	}
+//	@ApiOperation(value = "爬取沈阳房产销售价格列表", notes = "根据预售许可证爬取数据")
+//	@PostMapping("/collectPriceList")
+//	@Deprecated
+//	public ResponseData collectPriceList() {
+//		salesPricelistSpiderService.collectPriceList();
+//		return ResponseData.ok();
+//	}
+//	
+//	
+//	@ApiOperation(value = "从文件恢复沈阳房产销售价格列表", notes = "只需要输入日起即可 2019-02-10")
+//	@PostMapping("/recoverPriceList/{folderPath}")
+//	@Deprecated
+//	public ResponseData recoverPriceList(@PathVariable String folderPath) {
+//		salesPricelistSpiderService.recoverSalesPriceList(folderPath);
+//		return ResponseData.ok();
+//	}
 	
 	@ApiOperation(value = "初始化根据页数采集售价列表")
 	@PostMapping("/initSalesPriceManyList")
@@ -92,10 +93,30 @@ public class SYFCSalesPriceController {
 		return ResponseData.ok();
 	}
 	
-	@ApiOperation(value = "初始化采集售价详情")
-	@PostMapping("/initSalesPriceDetail")
-	public ResponseData initSalesPriceDetail() {
-		salesPriceDetailSpiderService.initSalesPriceDetail();
+	@ApiOperation(value = "去除重复采集的记录")
+	@PostMapping("/discinctSalesPriceList")
+	public ResponseData discinctSalesPriceList() {
+		salesPriceDetailSpiderService.discinctSalesPriceList();
+		return ResponseData.ok();
+	}
+	
+	@ApiOperation(value = "生成预售许可证下的售价列表")
+	@PostMapping("/slesNumPriceListGenerator")
+	public ResponseData slesNumPriceListGenerator() {
+		salesPriceDetailSpiderService.slesNumPriceListGenerator();
+		return ResponseData.ok();
+	}
+	
+	@ApiOperation(value = "增量采集售价详情")
+	@PostMapping("/incrementtSalesPrice")
+	public ResponseData incrementtSalesPrice() {
+		salesPriceListSpiderService.incrementtSalesPrice();
+		return ResponseData.ok();
+	}
+	@ApiOperation(value = "同步list到detail")
+	@PostMapping("/syncSalesPriceDetail")
+	public ResponseData syncSalesPriceDetail() {
+		salesPriceDetailSpiderService.syncSalesPriceDetail();
 		return ResponseData.ok();
 	}
 	

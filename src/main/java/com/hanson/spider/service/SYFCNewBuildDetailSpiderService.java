@@ -10,11 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -55,7 +60,7 @@ public class SYFCNewBuildDetailSpiderService {
 	//mongo 插入日期格式
 	private final String MONGO_ISO = "yyyy-MM-dd HH:mm:ss";
 	//mongo collection name
-	private final String recordCollectionName = "syfc_new_build_detail";
+	private final String recordCollectionName = "syfc_new_build_detail";//基准最新的新建房屋列表
 	private final String listCollectionName = "syfc_new_build_list";
 
 	
@@ -85,7 +90,6 @@ public class SYFCNewBuildDetailSpiderService {
 		}
 		String queueName = "syfcSalesBuildDetail";
 		SpiderConsumerPushMQ consumer = new SpiderConsumerPushMQ(consumerQueue,sender,queueName);
-		
 		new Thread(consumer).start();
 	}
 	
@@ -93,8 +97,8 @@ public class SYFCNewBuildDetailSpiderService {
 		Query query = new Query();
 		//不等于1的记录，未采集详情信息的记录
 		query.addCriteria(Criteria.where("collect_state").ne(1));
-		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName);
-//		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
+//		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName);
+		List<JSONObject> list = mongoTemplate.find(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
 		return list;
 	}
 	
@@ -132,8 +136,8 @@ public class SYFCNewBuildDetailSpiderService {
 		//文件目录名称
 		String date_str = sdf_date.format(new Date());
 		String folderName = "syfc_build_detail_" + date_str;
-//		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
-		String collectionName = recordCollectionName;
+		String collectionName = recordCollectionName+"_"+sdf_date.format(new Date());
+//		String collectionName = recordCollectionName;
 		int no;
 		String body = ret.getString("body");
 		Boolean success = ret.getBoolean("success");
@@ -172,9 +176,106 @@ public class SYFCNewBuildDetailSpiderService {
 				insert.put("collect_state", 1);
 				mongoTemplate.insert(insert,collectionName);
 			}
-			
+			//更新全量
+			//update
+			Update update = Update.
+			update("build_detail_list", parseBuildDetail)
+			.set("update_time", mongo_iso.format(new Date()))
+			.set("collect_state",1)//设置状态为1
+			;
+			mongoTemplate.updateFirst(detailQuery, update, recordCollectionName);
 		} catch (Exception e) {
 			logger.error("持久化mongo发生错误 NO:{},请求发生错误",no,e);
+		}
+	}
+	
+	public void incrementNewBuildDetail() {
+		int connectTimeout = 1000*30;//五分钟
+		int readTimeout = 1000*30;//五分钟
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();  
+		requestFactory.setConnectTimeout(connectTimeout);// 设置超时  
+		requestFactory.setReadTimeout(readTimeout);  
+		//设置代理
+		//利用复杂构造器可以实现超时设置，内部实际实现为 HttpClient  
+		RestTemplate restTemplate = new RestTemplate(requestFactory);  
+		String url = "http://www.syfc.com.cn/work/xjlp/new_building.jsp";
+		String body = restTemplate.getForObject(url,String.class);
+		// 解析页面
+		JSONArray parseBuildList = parser.parseBuildList(body);
+		//查找采集到的最后一个预售许可证，按照审批时间倒序
+		Query query = new Query();  
+		query.with(new Sort(new Order(Direction.DESC,"start_sales_date")));
+		JSONObject lastBuildDetail = mongoTemplate.findOne(query, JSONObject.class, recordCollectionName);
+		String date = lastBuildDetail.getString("start_sales_date");
+		for (Object object : parseBuildList) {
+			JSONObject build = (JSONObject)object;
+			/**
+			 * json.put("third_record_id", third_record_id);
+				json.put("deltail_uri", deltail_uri);
+				json.put("program_describe", program_describe);
+				json.put("district", district);
+				json.put("build_count", build_count);
+				json.put("company", company);
+				json.put("start_sales_date", start_sales_date);
+				json.put("subordinate_district", subordinate_district);
+			 */
+			String currentDate = build.getString("start_sales_date");
+			String third_record_id = build.getString("third_record_id");
+			try {
+				long dateLong = sdf_date.parse(date).getTime();
+				long currentDateLong = sdf_date.parse(currentDate).getTime();
+				//只有大于才添加，如果恰巧错过更新时间，则只能T+1再添加
+				if(currentDateLong > dateLong) {
+					Query detailQuery = new Query();
+					detailQuery.addCriteria(Criteria.where("third_record_id").is(third_record_id));
+					JSONObject buildRecord = mongoTemplate.findOne(detailQuery, JSONObject.class, recordCollectionName);
+					//没有则新增
+					if(buildRecord == null) {
+						build.put("collect_time", mongo_iso.format(new Date()));
+						build.put("collect_state", 0);
+						mongoTemplate.insert(build,recordCollectionName);
+					}else {
+						//数据被更新过，则保留原有副本，并增加ver
+						int ver = 0;
+						if(buildRecord.containsKey("ver")) {
+							ver = buildRecord.getInteger("ver");
+						}
+						Update update = Update.
+							update("build_detail_old_"+ver, buildRecord)
+							.set("ver", ++ver)
+							.set("deltail_uri", build.get("deltail_uri"))
+							.set("program_describe", build.get("program_describe"))
+							.set("district", build.get("district"))
+							.set("build_count", build.get("build_count"))
+							.set("company", build.get("company"))
+							.set("start_sales_date", build.get("start_sales_date"))
+							.set("subordinate_district", build.get("subordinate_district"))
+							.set("update_time", mongo_iso.format(new Date()))
+							.set("collect_state",0)//设置状态为1
+							;
+						mongoTemplate.updateFirst(detailQuery, update, recordCollectionName);
+					}
+				}
+			} catch (Exception e) {
+				logger.error("新增预售许可证错误，解析异常{}",third_record_id);
+			}
+		}
+	}
+	
+	public void initTodayNewBuildDetail() {
+		//生成全量当天采集任务
+		//TODO:此处可以添加逻辑是否继续每日采集
+		List<JSONObject> lastBuildDetailList = mongoTemplate.findAll(JSONObject.class, recordCollectionName);
+		for (Object object : lastBuildDetailList) {
+			JSONObject salesBuild = (JSONObject)object;
+			salesBuild.put("collect_state", 0);
+			Query query = new Query();
+			query.addCriteria(Criteria.where("third_record_id").is(salesBuild.get("third_record_id")));
+			JSONObject result = mongoTemplate.findOne(query, JSONObject.class, recordCollectionName+"_"+sdf_date.format(new Date()));
+			if(result == null) {
+				//新增记录
+				mongoTemplate.insert(salesBuild,recordCollectionName+"_"+sdf_date.format(new Date()));
+			}
 		}
 	}
 }
