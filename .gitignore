@@ -2,3 +2,4 @@
 /*.project
 /.settings/*.prefs
 /target/*
+/target/

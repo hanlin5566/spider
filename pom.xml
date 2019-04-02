@@ -74,6 +74,19 @@
 		        <artifactId>spring-boot-starter-amqp</artifactId>
 		</dependency>
 		
+		<dependency>
+			<groupId>com.hanson</groupId>
+			<artifactId>common</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
+		<!-- http处理增强 -->
+		<dependency>
+			<groupId>com.hanson</groupId>
+			<artifactId>http-handler</artifactId>
+			<version>1.0</version>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

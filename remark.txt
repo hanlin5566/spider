@@ -57,6 +57,12 @@ syfc_new_build_detail_2019_03_08 -->当日，历史
 4.清洗？？？
 *************new build*************
 
+************build house 未做************
+1.未纳入网上销售的没有详情
+2.SYFCNewBuildHouseSpiderService.transformTask 可以同步详情信息，暂时未做
+3.采集house detail未做，相当于每个房间的套内、阳台、公摊、销售、建筑面积未算。
+4.房屋状态为非可售状态时，是没有这些面积的，所以需要判断third_part_id不为空，才算真正采集到。
+
 *************售价***********  16935
 问题
 1.还能有5698个salesno没有相应的售价列表db.getCollection('syfc_sales_num_detail').find({"sales_price_collect_state":{$ne:1}}).count()
