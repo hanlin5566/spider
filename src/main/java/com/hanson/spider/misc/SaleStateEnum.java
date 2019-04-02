@@ -1,6 +1,6 @@
 package com.hanson.spider.misc;
 
-import com.hzcf.base.enums.EnumType;
+import com.hanson.base.enums.EnumType;
 
 /**
  * @author Hanson
@@ -16,6 +16,7 @@ public enum SaleStateEnum implements EnumType{
 	    CERTIFIED(4, "#0099ff"),//#已发证0099ff
 	    CLOSE_DOWN(1, "#ff0000"),//#查封ff0000
 	    ;
+		
 
 
 	    private final int code;

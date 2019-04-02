@@ -1,6 +1,6 @@
 package com.hanson.spider.misc;
 
-import com.hzcf.base.enums.IResponseCode;
+import com.hanson.base.enums.IResponseCode;
 
 /**
  * Create by hanlin on 2018年10月11日

@@ -1,5 +1,8 @@
 package com.hanson.spider.service;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,12 +25,12 @@ import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.hanson.base.exception.ServiceException;
 import com.hanson.spider.component.FileUtils;
 import com.hanson.spider.component.parser.SYFCParser;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
 import com.hanson.spider.misc.SpiderResponseCode;
 import com.hanson.spider.thread.SalesPriceDetailConsumerPushMQ;
-import com.hzcf.base.exception.ServiceException;
 
 /**
  * @author Hanson
@@ -116,7 +120,7 @@ public class SYFCSalesPriceDetailSpiderService {
 		fileUtils.saveFile(folderName, "syfc_sales_price_detail"+id+"_"+sdf_iso.format(new Date()), body);
 		
 		// 解析页面
-		JSONArray parseList = parser.parsePriceDetail(body);
+		JSONArray parseList = parser.parsePriceDetail(id,body);
 		// 持久化解析结果到mongo
 		if(parseList == null || parseList.size() == 0) {
 			logger.error("未解析到售价列表,不进行更新。id:{}",id);
@@ -321,5 +325,65 @@ public class SYFCSalesPriceDetailSpiderService {
 			mongoTemplate.updateFirst(updateQuery, update, priceListCollectionName);
 		}
 	}
+	
+	public void recoverSalesPriceDetail(String folderPath) {
+		String fileName = null;
+		try {
+			File folder = new File(folderPath);
+			//UUID
+			if(folder.isDirectory()) {
+				File[] listFiles = folder.listFiles();
+				for (File file : listFiles) {
+					fileName = file.getName();
+					if(fileName.indexOf("syfc_sales_price_detail")< 0 ) {
+						continue;
+					}
+					if(file.isDirectory()) {
+						//子目录递归调用
+						this.recoverSalesPriceDetail(file.getPath());
+					}else {
+						String guessCharset = this.guessCharset(file);
+						//syfc_sales_price_detail252703_2019-03-07_17-13-39
+						String id = file.getName().split("_")[3].replaceAll("detail","");
+						FileInputStream fis = new FileInputStream(file);
+						String content = IOUtils.toString(fis,guessCharset);
+						fis.close();
+						JSONObject ret = new JSONObject();
+						ret.put("body", content);
+						ret.put("id", id);
+						ret.put("success", true);
+						this.saveResult(ret);
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error("恢复数据发生错误 fileName:{},请求发生错误",fileName,e);
+		}
+	}
+	
+	
+   private String guessCharset(File file) throws Exception {
+        BufferedInputStream bin = new BufferedInputStream(new FileInputStream(file));
+        int p = (bin.read() << 8) + bin.read();
+        bin.close();
+        String code = null;
+ 
+        switch (p) {
+        case 0xefbb:
+            code = "UTF-8";
+            break;
+        case 0xfffe:
+            code = "Unicode";
+            break;
+        case 0xfeff:
+            code = "UTF-16BE";
+            break;
+        default:
+            code = "UTF-8";
+        }
+ 
+        return code;
+   }
+
 }
 

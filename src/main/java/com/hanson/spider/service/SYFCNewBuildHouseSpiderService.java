@@ -23,7 +23,7 @@ import com.hanson.spider.component.parser.SYFCParser;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
 import com.hanson.spider.misc.SpiderResponseCode;
 import com.hanson.spider.thread.SpiderConsumerPushMQ;
-import com.hzcf.base.exception.ServiceException;
+import com.hanson.base.exception.ServiceException;
 
 /**
  * @author Hanson create on 2018年3月11日
@@ -112,7 +112,7 @@ public class SYFCNewBuildHouseSpiderService {
 				JSONObject house = (JSONObject)object;
 				//根据house_third_record_id判断是否插入过
 				Query house_query = new Query();
-				house_query.addCriteria(Criteria.where("third_record_id").ne(house.getString("third_record_id")));
+				house_query.addCriteria(Criteria.where("third_record_id").is(house.getString("third_record_id")));
 				JSONObject find = mongoTemplate.findOne(house_query,JSONObject.class, recordCollectionName);
 				if(find == null) {
 					house.put("collect_state", 0);

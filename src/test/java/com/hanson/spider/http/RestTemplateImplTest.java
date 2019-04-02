@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.springframework.web.client.RestTemplate;
 
 import com.hanson.spider.misc.SpiderResponseCode;
-import com.hzcf.base.exception.ServiceException;
+import com.hanson.base.exception.ServiceException;
 
 /**
  * @author Hanson

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hanson.spider.service.SYFCNewBuildDetailSpiderService;
 import com.hanson.spider.service.SYFCNewBuildHouseSpiderService;
 import com.hanson.spider.service.SYFCNewBuildListSpiderService;
-import com.hzcf.base.response.ResponseData;
+import com.hanson.base.response.ResponseData;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

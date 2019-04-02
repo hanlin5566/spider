@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
 import com.hanson.spider.misc.SpiderResponseCode;
-import com.hzcf.base.exception.ServiceException;
+import com.hanson.base.exception.ServiceException;
 
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;

@@ -16,7 +16,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.misc.SaleStateEnum;
 import com.hanson.spider.misc.SpiderResponseCode;
-import com.hzcf.base.exception.ServiceException;
+import com.hanson.base.exception.ServiceException;
 
 /**
  * @author Hanson
@@ -304,7 +304,7 @@ public class SYFCParser {
 		return tierArray;
 	}
 	
-	public JSONArray parsePriceDetail(String body) {
+	public JSONArray parsePriceDetail(int id,String body) {
 		Document searchDoc = Jsoup.parse(body);
 		Elements levels = searchDoc.select(".T_song12bk2 .td2");
 		Map<String,String> changeKeyMap = new HashMap<String,String>();
@@ -342,6 +342,13 @@ public class SYFCParser {
 					//房屋描述
 					String houseDescribe = houseTd.getElementsByTag("tr").get(0).children().get(1).attr("xxx");
 					String[] split = houseDescribe.split("<br>");
+					//如果未售则可以取到售价
+					Elements idElement = houseTd.getElementsByTag("tr").get(0).children().get(1).getElementsByTag("input");
+					if(idElement != null && idElement.size() > 0) {
+						String nodeId = idElement.get(0).id();
+						String third_record_id = nodeId.split("_")[1];
+						house.put("third_record_id", third_record_id);
+					}
 					//不检索最后一条详情数据
 					for (int i = 0; i < split.length-1; i++) {
 						String string = split[i];
@@ -361,14 +368,15 @@ public class SYFCParser {
 							
 							house.put(key, value);
 						} catch (Exception e) {
-							logger.error("解析售价描述出现异常:{}",string,e);
+							logger.error("解析ID:{},楼层{},售价描述出现异常:{}",id,house_tier,string,e);
+							//防止脏数据入库
+							return null;
 						}
 					}
 					house.put("house_tier", house_tier.substring(1, house_tier.length()-1));
 					house.put("house_state", state);
 	//						house.put("sales_state_enum", JSONObject.toJSON(sales_state_enum).toString());
 	//						house.put("house_detail_uri", house_detail_uri);
-	//						house.put("third_record_id", third_record_id);
 	//						house.put("house_no", house_no);
 	//						house.put("house_localtion", house_localtion);
 					//每层添加房屋

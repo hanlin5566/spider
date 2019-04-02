@@ -3,7 +3,7 @@ package com.hanson.spider.parser;
 import java.io.FileInputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,7 +19,7 @@ import com.hanson.spider.misc.SaleStateEnum;
  * @author Hanson
  * create on 2019年2月6日
  */
-
+@Ignore
 public class SYFCNewBuildParserTest {
 	/**
 	 * {

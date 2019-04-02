@@ -26,7 +26,7 @@ import com.hanson.spider.component.parser.SYFCParser;
 import com.hanson.spider.component.rabbitmq.RabbitMQSender;
 import com.hanson.spider.misc.SpiderResponseCode;
 import com.hanson.spider.thread.SalesPriceListSpiderConsumerPushMQ;
-import com.hzcf.base.exception.ServiceException;
+import com.hanson.base.exception.ServiceException;
 
 /**
  * @author Hanson

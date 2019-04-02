@@ -214,7 +214,10 @@ public class SYFCSalesPriceTest {
 	@Test
 	public void testPriceHouse(){
 		try {
-			File salesPriceFile = new File("D:\\body\\syfc\\syfc_sales_price_detail.html");
+			//原有
+//			File salesPriceFile = new File("D:\\body\\syfc\\syfc_sales_price_detail.html");
+			//尝试解析招商的houseid
+			File salesPriceFile = new File("D:\\body\\syfc\\syfc_sales_price.html");
 			FileInputStream fis = new FileInputStream(salesPriceFile);
 			String body = IOUtils.toString(fis);
 			fis.close();
@@ -255,6 +258,13 @@ public class SYFCSalesPriceTest {
 						//房屋描述
 						String houseDescribe = houseTd.getElementsByTag("tr").get(0).children().get(1).attr("xxx");
 						String[] split = houseDescribe.split("<br>");
+						//如果未售则可以取到售价
+						Elements idElement = houseTd.getElementsByTag("tr").get(0).children().get(1).getElementsByTag("input");
+						if(idElement != null && idElement.size() > 0) {
+							String nodeId = idElement.get(0).id();
+							String third_record_id = nodeId.split("_")[1];
+							house.put("third_record_id", third_record_id);
+						}
 						//不检索最后一条详情数据
 						for (int i = 0; i < split.length-1; i++) {
 							String string = split[i];
@@ -281,7 +291,6 @@ public class SYFCSalesPriceTest {
 						house.put("house_state", state);
 //						house.put("sales_state_enum", JSONObject.toJSON(sales_state_enum).toString());
 //						house.put("house_detail_uri", house_detail_uri);
-//						house.put("third_record_id", third_record_id);
 //						house.put("house_no", house_no);
 //						house.put("house_localtion", house_localtion);
 						logger.info(house.toJSONString());

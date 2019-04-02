@@ -18,8 +18,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.misc.SpiderResponseCode;
 import com.hanson.spider.service.SYFCSalesNumDetailSpiderService;
 import com.hanson.spider.service.SYFCSalesNumListSpiderService;
-import com.hzcf.base.exception.ControllerException;
-import com.hzcf.base.response.ResponseData;
+import com.hanson.base.exception.ControllerException;
+import com.hanson.base.response.ResponseData;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

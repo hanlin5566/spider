@@ -16,7 +16,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.hanson.spider.service.SYFCSalesPriceDetailSpiderService;
 import com.hanson.spider.service.SYFCSalesPriceListSpiderService;
 import com.hanson.spider.service.SYFCSalesPriceManyListSpiderService;
-import com.hzcf.base.response.ResponseData;
+import com.hanson.base.response.ResponseData;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -43,9 +43,8 @@ public class SYFCSalesPriceController {
 	@Value("${syfc.tesseract.path:/opt/}")
 	private String datapath;
 	
-	@ApiOperation(value = "从文件恢复预售许可详情", notes = "从文件恢复预售许可详情")
 	@PostMapping("/tesseract")
-	public ResponseData recoverSalesNumDetail(@RequestBody JSONObject param) throws FileNotFoundException {
+	public ResponseData tesseract(@RequestBody JSONObject param) throws FileNotFoundException {
 		ITesseract instance = new Tesseract();
 	    instance.setLanguage("chi_sim");
 		instance.setDatapath(datapath);
@@ -78,6 +77,15 @@ public class SYFCSalesPriceController {
 //		salesPricelistSpiderService.recoverSalesPriceList(folderPath);
 //		return ResponseData.ok();
 //	}
+	
+	@ApiOperation(value = "从文件恢复售价详情", notes = "{\"folderPath\":\"D:\body\"}")
+	@PostMapping("/recover")
+	public ResponseData recoverSalesPriceDetail(@RequestBody JSONObject param) {
+		//D:\\body\\syfc_sales_num_detail2019-02-09
+		String folderPath = param.getString("folderPath");
+		salesPriceDetailSpiderService.recoverSalesPriceDetail(folderPath);
+		return ResponseData.ok();
+	}
 	
 	@ApiOperation(value = "初始化根据页数采集售价列表")
 	@PostMapping("/initSalesPriceManyList")
