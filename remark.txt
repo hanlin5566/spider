@@ -1,0 +1,90 @@
+﻿1.SalesNoDetail
+
+------salesNolist中sales_no_list数据结构
+ {
+    "date" : "2015-01-14",//审核日期
+    "no" : "2626",
+    "program_localtion" : "苏家屯四环路南22米规划路东",
+    "deltail_uri" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
+    "sales_no" : "15005",
+    "company" : "沈阳智富物流城开发有限公司",
+    "href" : "/work/ysxk/ysxkzinfo.jsp?id=17156199",
+    "third_record_id" : "17156199"
+}
+
+-------sales detail 入口----
+1.清洗时，由sales_list洗入，此时存入date--审核日期，并添加collect_time采集时间
+2.爬取详情时，写入approve_date--审核日期，并补全其余信息，按照third_record_id查找记录，如果找到更新，并写入collect_update_time,否则新增。添加collect_time
+3.TODO：从新增列表中写入
+
+-------新增salesno-------
+1.读取syfc_sales_num_detail，按照date倒序，查找最后一个slaeno
+2.当salesno大于记录中的salesno时，则放入syfc_sales_num_detail_new
+
+
+
+
+
+
+---------schedule------------
+
+*************sales nim*************
+1.每日爬取列表，比对detail。http://www.syfc.com.cn/work/ysxk/query_xukezheng.jsp
+POST http://localhost:9000/syfc/salesNo/incrementSalesNo
+2.新增数据清洗到sales_no_detail 
+POST http://localhost:9100/salesNo/increment
+3.继续爬取salesNODetail
+http://localhost:9000/syfc/salesNo/collectDetail
+4.清洗到mysql
+http://192.168.1.13:9100/salesNo/detail
+*************sales nim*************
+
+*************new build************* 目前没问题
+syfc_new_build_detail --> 全量最新
+syfc_new_build_detail_2019-03-12 -->当天采集的用于比对历史
+syfc_new_build_list -->列表，全量采集一次性收集。
+
+1.每日爬取列表，对比detail http://www.syfc.com.cn/work/xjlp/new_building.jsp
+POST http://192.168.1.13:9000/syfc/build/incrementNewBuildDetail
+syfc_new_build_detail -->全量&最新
+2.生成采集列表
+POST http://localhost:9000/syfc/build/initTodayNewBuildDetail
+syfc_new_build_detail_2019_03_08 -->当日，历史
+3.采集列表
+http://localhost:9000/syfc/build/collectNewBuildDetail
+syfc_new_build_detail_2019_03_08 -->当日，历史
+更新syfc_new_build_detail -->全量&最新
+4.清洗
+*************new build*************
+
+************build house 未做************
+1.未纳入网上销售的没有详情
+2.SYFCNewBuildHouseSpiderService.transformTask 可以同步详情信息，暂时未做
+3.采集house detail未做，相当于每个房间的套内、阳台、公摊、销售、建筑面积未算。
+4.房屋状态为非可售状态时，是没有这些面积的，所以需要判断third_part_id不为空，才算真正采集到。
+
+*************售价***********  16935
+问题
+1.还能有5698个salesno没有相应的售价列表db.getCollection('syfc_sales_num_detail').find({"sales_price_collect_state":{$ne:1}}).count()
+2.DONE:从22页开始爬取既可以。问题：每日增量时没有排序规则，无法获取新增的数据，而且数据中按照third_record_id有重复，但是sales_no不一致
+3.syfc_sales_price_list--syfc_sales_price_detail看起来是冗余了
+
+
+syfc_sales_price_many_list-->列表
+syfc_sales_price_list-->平铺售价列表
+syfc_sales_num_price_list-->销售号-列表分组
+syfc_sales_price_detail-->售价详情
+
+//每次从22页开始爬取，爬取三页，比对第三方Id如果没有则插入
+1.每日爬取列表，对比price_list http://218.25.83.4:7003/newbargain/download/findys/ys_info.jsp?kfs=&xmxq=&ldz=&ysid=&yzmcode=ssss&flagcx=1
+POST http://192.168.1.13:9000/syfc/salesPirce/incrementtSalesPrice
+2.同步sales_price_list
+POST http://192.168.1.13:9000/syfc/salesPirce/syncSalesPriceDetail
+3.每日爬取售价详情
+POST http://192.168.1.13:9000/syfc/salesPirce/collectSalesPriceDetail
+
+
+
+syfc_new_build_detail中building列表总长度 42577
+清洗syfc_building列表总长度42576
+mysql总长度 42582
