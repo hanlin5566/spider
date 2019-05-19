@@ -155,8 +155,8 @@ public class SYFCNewBuildDetailSpiderService {
 			Query detailQuery = new Query();
 			detailQuery.addCriteria(Criteria.where("third_record_id").is(third_record_id));
 			
-			JSONObject salesNumRecord = mongoTemplate.findOne(detailQuery, JSONObject.class, collectionName);
-			if(salesNumRecord != null ) {
+			JSONObject communityJSON = mongoTemplate.findOne(detailQuery, JSONObject.class, collectionName);
+			if(communityJSON != null ) {
 				//update
 				Update update = Update.
 				update("build_detail_list", parseBuildDetail)
@@ -166,7 +166,7 @@ public class SYFCNewBuildDetailSpiderService {
 				mongoTemplate.updateFirst(detailQuery, update, collectionName);
 			}else {
 				//insert
-				logger.error("数据不一致，新增预售许可证详情");
+				logger.error("数据不一致，新增楼盘");
 				//insert
 				JSONObject insert = new JSONObject();
 				insert.put("collect_time", mongo_iso.format(new Date()));

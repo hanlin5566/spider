@@ -107,7 +107,6 @@ public class SYFCParserTest {
 	}
 	
 	@Test
-	@Ignore
 	public void testBuildList() {
 		FileInputStream fis;
 		String body;

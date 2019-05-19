@@ -66,7 +66,7 @@ public class SpiderConsumerPushMQ implements Runnable {
 				} catch (Exception e) {
 					logger.error("http URI:{} NO:{},请求发生错误",url,no,e);
 				}
-				logger.info("采集{},NO{},ID{}",spider.getUrl(),no,id);
+				logger.info("采集URI:【{}】,编号：【{}】,ID：[{}]",spider.getUrl(),no,id);
 				ret.put("body", content);
 				ret.put("url", url);
 				ret.put("no", no);

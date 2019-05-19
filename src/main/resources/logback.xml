@@ -8,7 +8,7 @@
 	
 	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
 	<property name="APP_NAME" value="Hanson-Spider" />
-	<property name="LOG_HOME" value="/opt/logs/${APP_NAME}" />
+	<property name="LOG_HOME" value="D://opt//logs//${APP_NAME}" />
 	<property name="pattern" value="%date{ISO8601}\t%thread\t%level\t%logger\t%message%n"/>
 	
 	<!-- 控制台输出 -->

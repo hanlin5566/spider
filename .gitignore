@@ -3,3 +3,7 @@
 /.settings/*.prefs
 /target/*
 /target/
+/.idea
+/crawler/*.bson
+/*.iml
+/crawler/*.json

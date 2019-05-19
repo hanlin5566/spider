@@ -39,7 +39,7 @@ http://localhost:9000/syfc/salesNo/collectDetail
 http://192.168.1.13:9100/salesNo/detail
 *************sales nim*************
 
-*************new build*************
+*************new build************* 目前没问题
 syfc_new_build_detail --> 全量最新
 syfc_new_build_detail_2019-03-12 -->当天采集的用于比对历史
 syfc_new_build_list -->列表，全量采集一次性收集。
@@ -54,7 +54,7 @@ syfc_new_build_detail_2019_03_08 -->当日，历史
 http://localhost:9000/syfc/build/collectNewBuildDetail
 syfc_new_build_detail_2019_03_08 -->当日，历史
 更新syfc_new_build_detail -->全量&最新
-4.清洗？？？
+4.清洗
 *************new build*************
 
 ************build house 未做************
@@ -82,3 +82,9 @@ POST http://192.168.1.13:9000/syfc/salesPirce/incrementtSalesPrice
 POST http://192.168.1.13:9000/syfc/salesPirce/syncSalesPriceDetail
 3.每日爬取售价详情
 POST http://192.168.1.13:9000/syfc/salesPirce/collectSalesPriceDetail
+
+
+
+syfc_new_build_detail中building列表总长度 42577
+清洗syfc_building列表总长度42576
+mysql总长度 42582

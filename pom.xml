@@ -86,6 +86,12 @@
 			<artifactId>http-handler</artifactId>
 			<version>1.0</version>
 		</dependency>
+		<!-- http处理增强 -->
+		<dependency>
+			<groupId>com.hanson</groupId>
+			<artifactId>transform</artifactId>
+			<version>1.0</version>
+		</dependency>
 		
 	</dependencies>
 
